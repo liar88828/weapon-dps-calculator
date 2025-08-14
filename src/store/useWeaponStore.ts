@@ -1,27 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type WeaponState = Weapon & {
-    weapons: Weapon[];
-    setField: (field: keyof Weapon, value: string | number) => void;
-    addWeapon: () => void;
-    reset: () => void;
-    removeWeapon: (id: string) => void;
-    selectWeapon: (id: string) => void
-};
-
-const defaultWeapon: Weapon = {
-    id: "",
-    name: "",
-    category: "",
-    damage: 0,
-    magazine: 0,
-    fireTime: 0,
-    criticalChange: 0,
-    criticalMultiplier: 2,
-    reloadTime: 0
-};
-
 type Weapon = {
     id: string;
     name: string;
@@ -32,7 +11,34 @@ type Weapon = {
     criticalChange: number;
     criticalMultiplier: number;
     reloadTime: number;
+    multiplier: number;
+    elementalDps: number;
 };
+
+type WeaponState = Weapon & {
+    weapons: Weapon[];
+    setField: (field: keyof Weapon, value: string | number) => void;
+    addWeapon: () => void;
+    reset: () => void;
+    removeWeapon: (id: string) => void;
+    selectWeapon: (id: string) => void
+};
+
+
+const defaultWeapon: Weapon = {
+    id: "",
+    name: "",
+    category: "",
+    damage: 0,
+    magazine: 0,
+    fireTime: 0,
+    criticalChange: 0,
+    criticalMultiplier: 2,
+    reloadTime: 0,
+    multiplier: 1,
+    elementalDps: 0,
+};
+
 
 export const useWeaponStore = create<WeaponState>()(
     persist(
