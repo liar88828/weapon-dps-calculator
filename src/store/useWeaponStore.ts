@@ -33,7 +33,7 @@ const defaultWeapon: Weapon = {
     magazine: 0,
     fireTime: 0,
     criticalChange: 0,
-    criticalMultiplier: 2,
+    criticalMultiplier: 0,
     reloadTime: 0,
     multiplier: 1,
     elementalDps: 0,
