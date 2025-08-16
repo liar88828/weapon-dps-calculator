@@ -9,6 +9,10 @@ export function Layout() {
                     <Link to="/" className="hover:underline">
                         Home
                     </Link>
+                    <Link to="/compare" className="hover:underline">
+                        Compare
+                    </Link>
+
                     <Link to="/about" className="hover:underline">
                         About
                     </Link>

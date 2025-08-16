@@ -1,5 +1,17 @@
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useTitle } from "@/hook/useTitle.ts";
+import { motion } from "framer-motion";
+
 export default function About() {
+    useTitle('About')
     return (
+        <TooltipProvider>
+            <motion.div
+                initial={ { opacity: 0, y: 8 } }
+                animate={ { opacity: 1, y: 0 } }
+                transition={ { duration: 0.18 } }
+                className="h-full"
+            >
         <div className="max-w-3xl mx-auto space-y-4">
             <h1 className="text-3xl font-bold">About Weapon DPS Calculator</h1>
             <p>
@@ -26,5 +38,7 @@ export default function About() {
                 balancing.
             </p>
         </div>
+            </motion.div>
+        </TooltipProvider>
     );
 }
