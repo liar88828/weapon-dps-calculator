@@ -6,22 +6,27 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { WeaponList } from "@/components/web/home.tsx";
 import { useTitle } from "@/hook/useTitle.ts";
 import { calcBaseDps, calcCritDps, fmt } from "@/lib/calculate-weapon.ts";
 import type { Weapon } from "@/store/useFormWeaponStore.ts";
-import { useWeaponFilterStore } from "@/store/useWeaponFilterStore";
+import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore";
 import { motion } from "framer-motion";
 import {
     ArrowDownIcon,
     ArrowUpIcon,
-    BaggageClaim,
+    Biohazard,
     Bolt,
+    BoxIcon,
     Clock,
     Gauge,
     Music4Icon,
     Package2,
     RefreshCcw,
+    Scroll,
+    Sparkle,
+    Sword,
     Swords
 } from "lucide-react";
 import * as React from "react";
@@ -31,7 +36,14 @@ export default function Compare() {
     useTitle('Compare Weapon')
     const { compareWeapons, setCompareWeapons } = useWeaponListStore();
 
-    return (<div>
+    return (
+        <TooltipProvider>
+            <motion.div
+                initial={ { opacity: 0, y: 8 } }
+                animate={ { opacity: 1, y: 0 } }
+                transition={ { duration: 0.18 } }
+                className="h-full"
+            >
             <div className="space-y-2">
                 <WeaponCard weapon={ compareWeapons.weapon1 }
                             onRemove={ () => setCompareWeapons(null, compareWeapons.weapon2) }
@@ -44,9 +56,9 @@ export default function Compare() {
                     isWeapon1={ false }
                     weapon1={ compareWeapons.weapon1 }
                     weapon2={ compareWeapons.weapon2 }
-                />
-            </div>
-        </div>
+                /></div>
+            </motion.div>
+        </TooltipProvider>
     );
 }
 
@@ -105,7 +117,7 @@ export function ListSavedWeaponDialog({ isWeapon1 }: { isWeapon1: boolean }) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button>Select Weapons</Button>
+                <Button>Select Weapons </Button>
             </DialogTrigger>
 
             <DialogContent className="sm:max-w-5xl w-full">
@@ -186,64 +198,99 @@ export function ListSavedWeaponDialog({ isWeapon1 }: { isWeapon1: boolean }) {
                     </div>
                 </DialogHeader>
                 <div className={ 'h-96 overflow-y-scroll' }>
-
-                { weapons.length > 0 ? (
-                    <Card>
-                        <CardContent className="space-y-2">
+                    { weapons.length > 0 ? (
+                        <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
                             { filteredWeapons.map((w) => {
-                                const dps =
-                                    w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
                                 return (
-                                    <div
+                                    <WeaponList
                                         key={ w.id }
-                                        className="flex justify-between items-center border-b pb-1"
-                                    >
-                                        <div className="sm:text-sm text-sm">
-                                            <p className="font-bold">
-                                                { w.name } ({ w.category })
-                                            </p>
-                                            <p>
-                                                { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)
-                                            </p>
-                                            <p>
-                                                { w.fireTime } FT - { w.magazine } mag
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2 flex-col">
-                                            <DialogClose asChild>
-                                                <Button size="sm"
-                                                        onClick={ () => {
-                                                            if (isWeapon1) {
-                                                                setCompareWeapons(w, compareWeapons.weapon2)
-                                                            } else {
-                                                                setCompareWeapons(compareWeapons.weapon1, w)
-                                                            }
-                                                        }
-                                                        }>
-                                                    Weapon { isWeapon1 ? '1' : '2' }
-                                                </Button>
-                                            </DialogClose>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={ () => removeWeapon(w.id) }
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </div>
+                                        w={ w }
+                                        isWeapon1={ isWeapon1 }
+                                        removeWeapon={ removeWeapon }
+                                        selectWeapon={ (w) => {
+                                            if (isWeapon1) setCompareWeapons(w, compareWeapons.weapon2)
+                                            else setCompareWeapons(compareWeapons.weapon1, w)
+                                        } }
+                                    />
                                 );
                             }) }
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <p className="text-muted-foreground">No saved weapons.</p>
-                ) }
+                        </div>
+                    ) : (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>No saved weapons.</CardTitle>
+                                <CardDescription>
+                                    <Button variant="outline" asChild>
+                                        <Link to={ '/' }> Add Weapon</Link>
+                                    </Button>
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    ) }
                 </div>
             </DialogContent>
         </Dialog>
+    )
+        ;
+}
+
+export function WeaponListCompareOld(
+    {
+        w, removeWeapon, isWeapon1
+    }:
+    {
+        isWeapon1: boolean
+        w: Weapon,
+        selectWeapon
+            :
+            (w: Weapon) => void,
+        removeWeapon
+            :
+            (w: Weapon['id']) => void
+    }) {
+    const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
+
+    return (
+        <div
+            key={ w.id }
+            className="flex justify-between items-center border-b pb-1"
+        >
+            <div className="sm:text-sm text-sm">
+                <p className="font-bold">
+                    { w.name } ({ w.category })
+                </p>
+                <p>
+                    { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)
+                </p>
+                <p>
+                    { w.fireTime } FT - { w.magazine } mag
+                </p>
+            </div>
+            <div className="flex gap-2 flex-col">
+                <DialogClose asChild>
+                    <Button size="sm"
+                            onClick={ () => removeWeapon(w.id) }>
+                        Weapon { isWeapon1 ? '1' : '2' }
+                    </Button>
+                </DialogClose>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={ () => () => {
+                        // if (isWeapon1) {
+                        //     setCompareWeapons(w, compareWeapons.weapon2)
+                        // } else {
+                        //     setCompareWeapons(compareWeapons.weapon1, w)
+                        // }
+                    } }
+                >
+                    Delete
+                </Button>
+            </div>
+        </div>
     );
 }
+
 
 export function WeaponCard(
     { weapon, onSelect, onRemove, selected, actionsSlot, isWeapon1 }:
@@ -287,7 +334,7 @@ export function WeaponCard(
                     <CardHeader className="space-y-1">
                         <div className="flex items-center justify-between">
                             <CardTitle className="text-xl flex items-center gap-2">
-                                <Swords className="size-5"/> { weapon.name }
+                                <Scroll className="size-5"/> { weapon.name }
                             </CardTitle>
                             <Badge variant="secondary"
                                    className="rounded-full px-3 py-1 text-xs">{ weapon.category }</Badge>
@@ -302,7 +349,7 @@ export function WeaponCard(
                                       hint="damage / fireTime × multiplier"/>
                             <StatTile icon={ <Bolt className="size-4"/> } label="Crit DPS" value={ fmt(critDps) }
                                       hint="Base DPS × (1 + critChance × (critMult − 1))"/>
-                            <StatTile icon={ <Bolt className="size-4"/> } label="Elem. DPS"
+                            <StatTile icon={ <Biohazard className="size-4"/> } label="Elem. DPS"
                                       value={ fmt(weapon.elementalDps) } hint="Elemental damage per second from procs"/>
                         </div>
 
@@ -310,17 +357,17 @@ export function WeaponCard(
 
                         {/* Core stats */ }
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <TinyStat icon={ <Package2 className="size-4"/> } label="Damage"
+                            <TinyStat icon={ <Sword className="size-4"/> } label="Damage"
                                       value={ fmt(weapon.damage) }/>
-                            <TinyStat icon={ <BaggageClaim className="size-4"/> } label="Magazine"
+                            <TinyStat icon={ <BoxIcon className="size-4"/> } label="Magazine"
                                       value={ fmt(weapon.magazine, 0) }/>
                             <TinyStat icon={ <Clock className="size-4"/> } label="Fire Time (s)"
                                       value={ fmt(weapon.fireTime, 2) }/>
                             <TinyStat icon={ <RefreshCcw className="size-4"/> } label="Reload (s)"
                                       value={ fmt(weapon.reloadTime, 2) }/>
                             <TinyStat icon={ <Bolt className="size-4"/> } label="Crit Chance"
-                                      value={ `${ fmt((weapon.criticalChange ?? 0) * 100, 1) }%` }/>
-                            <TinyStat icon={ <Bolt className="size-4"/> } label="Crit Mult"
+                                      value={ `${ fmt((weapon.criticalChange ?? 0), 1) }%` }/>
+                            <TinyStat icon={ <Sparkle className="size-4"/> } label="Crit Mult"
                                       value={ `${ fmt(weapon.criticalMultiplier, 2) }×` }/>
                         </div>
                     </CardContent>
@@ -328,7 +375,7 @@ export function WeaponCard(
                     <CardFooter className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Badge className="rounded-full"
-                                   variant="outline">x{ fmt(weapon.multiplier, 2) } mult</Badge>
+                                   variant="outline"><Swords/> { fmt(weapon.multiplier, 2) } mult </Badge>
                         </div>
                         <div className="flex items-center gap-2">
                             { actionsSlot }
@@ -465,8 +512,8 @@ export function WeaponCardCompare(
                                              value2={ fmt(weapon2.reloadTime, 2) }
                             />
                             <TinyStatCompare icon={ <Bolt className="size-4"/> } label="Crit Chance"
-                                             value1={ `${ fmt((weapon1.criticalChange ?? 0) * 100, 1) }%` }
-                                             value2={ `${ fmt((weapon2.criticalChange ?? 0) * 100, 1) }%` }
+                                             value1={ `${ fmt((weapon1.criticalChange ?? 0) , 1) }%` }
+                                             value2={ `${ fmt((weapon2.criticalChange ?? 0) , 1) }%` }
                             />
                             <TinyStatCompare icon={ <Bolt className="size-4"/> } label="Crit Mult"
                                              value1={ `${ fmt(weapon1.criticalMultiplier, 2) }×` }
@@ -479,10 +526,10 @@ export function WeaponCardCompare(
                         <div className="flex items-center gap-2">
 
                             <Badge className="rounded-full text-red-400"
-                                   variant="outline">x{ fmt(weapon1.multiplier, 2) } mult</Badge>
+                                   variant="outline"><Swords/>{ fmt(weapon1.multiplier, 2) } mult</Badge>
 
                             <Badge className="rounded-full text-blue-400"
-                                   variant="outline">x{ fmt(weapon1.multiplier, 2) } mult</Badge>
+                                   variant="outline"><Swords/>{ fmt(weapon2.multiplier, 2) } mult</Badge>
 
 
                         </div>

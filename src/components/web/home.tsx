@@ -16,7 +16,20 @@ import { useFormWeaponStore, type Weapon } from "@/store/useFormWeaponStore.ts";
 import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore.ts";
 import { motion } from "framer-motion";
-import { useState } from "react"
+import {
+    Biohazard, Bolt,
+    Box,
+    Clock, Layers2,
+    Pickaxe, Plus,
+    RefreshCcw,
+    RefreshCw, RotateCcw,
+    Scroll,
+    Sparkle,
+    Sword,
+    Swords,
+    TrashIcon
+} from "lucide-react";
+import { type ReactNode, useState } from "react"
 
 export default function Home() {
     useTitle('Home')
@@ -64,18 +77,18 @@ export default function Home() {
 
     // Shots per second
     const rps = getRoundsPerSecond(numFireTime);
+    const dMag = numDamage * numMultiplier * numMagazine
 
     // Cycle time
     const magazineTime = getMagazineTime(numMagazine, rps);
     const totalCycleTime = magazineTime + numReloadTime;
 
     // 1️⃣ Normal DPS
-    const damageMultiplier = numDamage * numMultiplier;
-    const normalDps = damageMultiplier * rps;
+    const normalDps = calcBaseDps({ damage: numDamage, multiplier: numMultiplier, fireTime: numFireTime })
 
     // 2️⃣ Critical DPS
+    // const criticalHit = calcBaseDps(form);
     const criticalAverage = calcCritDps(form);
-    const criticalHit = calcBaseDps(form);
     const criticalDps = criticalAverage * rps;
 
     // 3️⃣ Normal + Elemental DPS
@@ -104,7 +117,6 @@ export default function Home() {
                         <h1 className="text-3xl font-bold">Weapon DPS Calculator</h1>
                         <ListSavedWeaponDialog weapons={ weapons } selectWeapon={ setForm }
                                                removeWeapon={ removeWeapon }/>
-
                     </div>
 
                     <Card>
@@ -112,68 +124,95 @@ export default function Home() {
                             <CardTitle>Weapon Stats</CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <MyInput title="Name" type="text" value={ name } onChange={ v => setField("name", v) }
+                            <MyInput
+                                icon={<Scroll />}
+                                title="Name" type="text" value={ name } onChange={ v => setField("name", v) }
                                      placeholder="Name: Bazooka"/>
 
-                            <MyInput title="Category" type="text" value={ category }
+                            <MyInput
+                                icon={<Layers2 />}
+                                title="Category" type="text" value={ category }
                                      onChange={ v => setField("category", v) }
                                      placeholder="Category: Rocket"/>
 
-                            <MyInput title="Damage" type="number" value={ damage }
+                            <MyInput
+                                icon={<Sword/>}
+                                title="Damage" type="number" value={ damage }
                                      onChange={ v => setField("damage", v) }
                                      placeholder="Damage: 25"/>
-                            <MyInput title="Multiplier" type="number" value={ multiplier }
+                            <MyInput
+                                icon={<Swords />}
+                                title="Multiplier" type="number" value={ multiplier }
                                      onChange={ v => setField("multiplier", v) } placeholder="Multiplier: 2"/>
 
-                            <MyInput title="Rate of Fire (RPM)" type="number" value={ fireTime }
+                            <MyInput icon={<Clock/>} title="Rate of Fire (RPM)" type="number" value={ fireTime }
                                      onChange={ v => setField("fireTime", v) } placeholder="RPM: 600"/>
-                            <MyInput title="Magazine Size" type="number" value={ magazine }
+                            <MyInput icon={<Box/>} title="Magazine Size" type="number" value={ magazine }
                                      onChange={ v => setField("magazine", v) } placeholder="Magazine Size: 30"/>
-                            <MyInput title="Reload Time (s)" type="number" value={ reloadTime }
+                            <MyInput icon={<RefreshCcw/>} title="Reload Time (s)" type="number" value={ reloadTime }
                                      onChange={ v => setField("reloadTime", v) } placeholder="Reload Time: 2.5"/>
 
 
-                            <MyInput title="Elemental DPS" type="number" value={ elementalDps }
+                            <MyInput icon={<Biohazard/>} title="Elemental DPS" type="number" value={ elementalDps }
                                      onChange={ v => setField("elementalDps", v) } placeholder="Elemental DPS: 50"/>
-                            <MyInput title="Critical Chance (%)" type="number" value={ criticalChange }
+                            <MyInput icon={<Bolt/>} title="Critical Chance (%)" type="number" value={ criticalChange }
                                      onChange={ v => setField("criticalChange", v) } placeholder="Critical Chance: 30"/>
-                            <MyInput title="Critical Multiplier" type="number" value={ criticalMultiplier }
+                            <MyInput icon={<Sparkle/>} title="Critical Multiplier" type="number" value={ criticalMultiplier }
                                      onChange={ v => setField("criticalMultiplier", v) } placeholder="Multiplier: 2"/>
 
                         </CardContent>
                         <CardFooter className="gap-2">
-                            <Button onClick={ saveWeapon }>Add</Button>
-                            <Button variant="destructive" onClick={ reset }>Reset</Button>
+                            <Button onClick={ saveWeapon }> <Plus /> Add</Button>
+                            <Button variant="destructive" onClick={ reset }> <RotateCcw /> Reset</Button>
                         </CardFooter>
                     </Card>
 
-                    <Card>
+                    <Card className={ 'text-sm sm:text-base' }>
                         <CardHeader>
                             <CardTitle>Results</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Normal Damage */ }
                             <div>
-                                <h3 className="font-semibold">Normal Damage</h3>
                                 <p>RPS = { fireTime } / 60 = <b>{ rps.toFixed(2) }</b> bullets/sec</p>
+
                                 <p>
-                                    Cycle Time = { magazineTime.toFixed(2) } + { reloadTime } ={ " " }
+                                    Cycle Time = { numMagazine } / { rps.toFixed(2) } + { reloadTime } ={ " " }
                                     { totalCycleTime.toFixed(2) }s
                                 </p>
+
+                                <p>DMag = ({ damage } × { multiplier }) × { magazine } = { dMag } </p>
+
+
                                 <p>
-                                    DPS (no reload) = { damage } × { multiplier } × { rps.toFixed(2) } ={ " " }
+                                    DPS (no reload&mag) = ({ damage } × { multiplier }) × { rps.toFixed(2) } ={ " " }
                                     <b>{ normalDps.toFixed(2) }</b>
                                 </p>
 
-                                <p>Total Damage per Mag = { (normalDps * magazine).toFixed(2) }</p>
-                                <p>Effective DPS = { normalDpsEffective.toFixed(2) }</p>
+                                {/*<p>*/ }
+                                {/*    DPS (no ammo) = ({ damage } × { multiplier }) × { rps.toFixed(2) } ={ " " }*/ }
+                                {/*    <b>{ normalDps.toFixed(2) }</b>*/ }
+                                {/*</p>*/ }
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
+                            {/* Normal Damage */ }
+                            <div>
+                                <h3 className="font-semibold">Normal Damage</h3>
+                                <p>
+                                    DPS (Base) = <b>{ normalDps.toFixed(2) }</b>
+                                </p>
+
+                                <p>Total Damage per Mag
+                                    = { normalDps.toFixed(2) } × { magazine } = { (normalDps * magazine).toFixed(2) }</p>
+
+                                <p>Effective DPS
+                                    = { (normalDps * magazine).toFixed(2) } / { totalCycleTime.toFixed(2) } = { normalDpsEffective.toFixed(2) }</p>
                             </div>
 
                             {/* With Critical */ }
                             <div>
                                 <h3 className="font-semibold">With Critical</h3>
+                                {/*<p>hit Damage = { criticalHit.toFixed(2) }</p>*/ }
                                 <p>Average Damage = { criticalAverage.toFixed(2) } </p>
-                                <p>hit Damage = { criticalHit.toFixed(2) }</p>
                                 <p>DPS (Critical) = <b>{ criticalDps.toFixed(2) }</b></p>
                                 <p>Total Damage per Mag = { (criticalDps * magazine).toFixed(2) }</p>
                                 <p>Effective DPS = { criticalDpsEffective.toFixed(2) }</p>
@@ -216,12 +255,7 @@ export default function Home() {
     );
 }
 
-export function ListSavedWeaponDialog(
-    {
-        weapons,
-        selectWeapon,
-        removeWeapon,
-    }: {
+export function ListSavedWeaponDialog({ weapons, selectWeapon, removeWeapon, }: {
         weapons: Weapon[];
         selectWeapon: (weapon: Weapon) => void;
         removeWeapon: (id: string) => void;
@@ -276,7 +310,7 @@ export function ListSavedWeaponDialog(
                 <Button>Open</Button>
             </DialogTrigger>
 
-            <DialogContent className="sm:max-w-5xl w-full">
+            <DialogContent className="sm:max-w-5xl w-full px-3 sm:px-6">
                 <DialogHeader>
                     <DialogTitle>Saved Weapons</DialogTitle>
                     <div className="grid col-span-2 gap-2">
@@ -356,46 +390,17 @@ export function ListSavedWeaponDialog(
                 <div className={ 'h-96 overflow-y-scroll' }>
 
                 { weapons.length > 0 ? (
-                    <Card>
-                        <CardContent className="space-y-2">
+                    <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
                             { filteredWeapons.map((w) => {
-                                const dps =
-                                    w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
+                                // const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
                                 return (
-                                    <div
-                                        key={ w.id }
-                                        className="flex justify-between items-center border-b pb-1"
-                                    >
-                                        <div className="sm:text-sm text-sm">
-                                            <p className="font-bold">
-                                                { w.name } ({ w.category })
-                                            </p>
-                                            <p>
-                                                { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)
-                                            </p>
-                                            <p>
-                                                { w.fireTime } FT - { w.magazine } mag
-                                            </p>
-                                        </div>
-                                        <div className="flex gap-2 flex-col">
-                                            <DialogClose asChild>
-                                                <Button size="sm" onClick={ () => selectWeapon(w) }>
-                                                    Select
-                                                </Button>
-                                            </DialogClose>
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={ () => removeWeapon(w.id) }
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </div>
+                                    <WeaponList w={ w } key={ w.id }
+                                                removeWeapon={ removeWeapon }
+                                                selectWeapon={ selectWeapon }/>
                                 );
                             }) }
-                        </CardContent>
-                    </Card>
+                    </div>
+
                 ) : (
                     <p className="text-muted-foreground">No saved weapons.</p>
                 ) }
@@ -407,6 +412,62 @@ export function ListSavedWeaponDialog(
     );
 }
 
+export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
+    w: Weapon,
+    isWeapon1?: boolean,
+    selectWeapon: (w: Weapon) => void,
+    removeWeapon: (w: Weapon['id']) => void
+}) {
+    return (
+        <Card key={ w.id } className={ 'gap-0 ' }>
+            <CardHeader className={ 'px-3 sm:px-6' }>
+                <CardTitle
+                    className={ 'capitalize' }>{ w.name } ({ w.category }) { calcBaseDps(w).toFixed(2) }</CardTitle>
+            </CardHeader>
+            <CardContent className={ 'px-3 sm:px-6' }>
+                <div className="flex flex-row gap-2 sm:text-sm text-xs  ">
+                    <IconWeapon icon={ <Sword/> }
+                                text={ `${ w.damage } x ${ w.multiplier }` }/>
+                    <IconWeapon icon={ <Clock/> } text={ `${ w.fireTime } ft` }/>
+                    <IconWeapon icon={ <Box/> } text={ `${ w.magazine } mag` }/>
+                    <IconWeapon icon={ <RefreshCw/> } text={ `${ w.reloadTime } rel` }/>
+
+                    {/*<p>*/ }
+                    {/*    { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)*/ }
+                    {/*</p>*/ }
+
+                    <div className="flex flex-col justify-between">
+                        <DialogClose asChild>
+                            <Button
+                                size="sm" onClick={ () => selectWeapon(w) }>
+                                <Pickaxe/>
+                                {
+                                    isWeapon1 === undefined ? null : <>
+                                        { isWeapon1 ? '1' : '2' }
+                                    </>
+                                }
+                                {/*<span className={ 'hidden sm:block' }>Select</span>*/ }
+
+                            </Button>
+                        </DialogClose>
+
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={ () => removeWeapon(w.id) }
+                        >
+                            <TrashIcon/>
+                            {/*<span className={ 'hidden sm:block' }>Delete</span>*/ }
+                        </Button>
+                    </div>
+
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export function MyInput(
     {
         title,
@@ -414,8 +475,10 @@ export function MyInput(
         error,
         value,
         onChange,
-        placeholder
+        placeholder,
+        icon
     }: {
+        icon?: ReactNode
         title: string;
         type: "number" | "text";
         error?: string;
@@ -426,17 +489,35 @@ export function MyInput(
     return (
         <div className="flex flex-col gap-1">
             <Label>{ title }</Label>
+            <div className=" flex items-center gap-1 border border-input rounded-lg px-3">
+                { icon }
             <Input
                 type={ type }
                 onChange={ (e) => onChange(e.target.value) }
                 value={ value }
                 placeholder={ placeholder }
-                className="w-full"
+                className="w-full ml-2 border-white"
             />
+            </div>
             { error && <p className="text-red-500 text-xs">Error: { error }</p> }
         </div>
     );
 }
+
+export function IconWeapon({ text, icon }: { text: string | number, icon: ReactNode }) {
+    return (
+        <div className=" border rounded-lg flex items-center flex-col gap-2 sm:px-4 px-3 py-3  ">
+            <p className="text-muted-foreground">
+                { icon }
+            </p>
+            <span className={ 'text-nowrap' }>
+            { text }
+            </span>
+        </div>
+    );
+}
+
+
 
 export function HomeOld() {
     // const loader = useLoaderData<typeof loadRootData>()

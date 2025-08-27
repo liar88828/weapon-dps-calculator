@@ -4,9 +4,9 @@ export const fmt = (n: number, d: number = 2) => {
     return (Number.isFinite(n) ? n.toLocaleString(undefined, { maximumFractionDigits: d }) : "-")
 };
 
-export const calcBaseDps = (w: Weapon) => {
+export const calcBaseDps = (w: Pick<Weapon, 'damage' | 'fireTime' | 'multiplier'>) => {
     if (!w.fireTime || w.fireTime <= 0) return 0;
-    return (w.damage / w.fireTime) * (w.multiplier || 1);
+    return (w.damage * (w.fireTime / 60)) * (w.multiplier || 1);
 };
 
 export const calcCritDps = (w: Weapon) => {
@@ -28,14 +28,32 @@ export const calcCritDps = (w: Weapon) => {
 // }
 
 export function getEffectiveDps(baseDps: number, numMagazine: number, totalCycleTime: number) {
-    return totalCycleTime > 0 ? (baseDps * numMagazine) / totalCycleTime : 0;
+    return totalCycleTime > 0
+        ? (baseDps * numMagazine) / totalCycleTime
+        : 0;
 }
 
 // FIXED: if fireTime = seconds per shot
 export function getRoundsPerSecond(fireTime: number): number {
-    return fireTime > 0 ? 1 / fireTime : 0;
+    // console.log(`test1 : ${ 6.7 / 60 }`)
+    // console.log(`test1 : ${ 1 / 6.7 }`)
+
+    return fireTime > 0
+        ? fireTime / 60
+        : 0;
 }
 
+
 export function getMagazineTime(magazineSize: number, roundsPerSecond: number) {
-    return roundsPerSecond > 0 ? magazineSize / roundsPerSecond : 0;
+    return roundsPerSecond > 0
+        ? magazineSize / roundsPerSecond
+        : 0;
+}
+
+export const trueDPS = (w: Weapon) => {
+    const d_mag = (w.damage * w.multiplier * w.magazine)
+    // console.log(d_mag)
+    const mag_rel = (w.magazine / w.fireTime) + w.reloadTime
+    // console.log(mag_rel)
+    return d_mag / mag_rel
 }
