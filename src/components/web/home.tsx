@@ -1,107 +1,70 @@
+import { IconWeapon } from "@/components/mini/iconWeapon.tsx";
+import { MyInput } from "@/components/mini/myInput.tsx";
 import { Button } from "@/components/ui/button.tsx"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card.tsx"
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input.tsx"
-import { Label } from "@/components/ui/label.tsx"
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { trueDPS, useDpsWeapon } from "@/hook/useDpsWeapon.ts";
 import { useTitle } from "@/hook/useTitle.ts";
-import {
-    calcBaseDps,
-    calcCritDps,
-    getEffectiveDps,
-    getMagazineTime,
-    getRoundsPerSecond
-} from "@/lib/calculate-weapon.ts";
 import { useFormWeaponStore, type Weapon } from "@/store/useFormWeaponStore.ts";
+import { useSettingStore } from "@/store/useSettingStore.ts";
 import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore.ts";
 import { motion } from "framer-motion";
 import {
-    Biohazard, Bolt,
+    Biohazard,
+    Bolt,
     Box,
-    Clock, Layers2,
-    Pickaxe, Plus,
+    Clock,
+    Layers2,
+    Pickaxe,
+    Plus,
     RefreshCcw,
-    RefreshCw, RotateCcw,
+    RefreshCw,
+    RotateCcw,
     Scroll,
     Sparkle,
     Sword,
     Swords,
     TrashIcon
 } from "lucide-react";
-import { type ReactNode, useState } from "react"
+import { useState } from "react"
 
 export default function Home() {
     useTitle('Home')
 
     const { setField, reset, setForm, form } = useFormWeaponStore();
+    const { form: setting, setField: setSetting } = useSettingStore();
     const { weapons, removeWeapon, addWeapon } = useWeaponListStore();
     const {
-        id,
-        name,
-        category,
-        damage,
-        fireTime,
-        magazine,
-        reloadTime,
-        criticalChange,
-        criticalMultiplier,
-        multiplier,
-        elementalDps,
-    } = form
+        // Normal Damage
+        rps,
+        dMag,
+        totalCycleTime,
+        normalDpsEffective,
+        normalDps,
+
+        // With Critical
+        criticalAverage,
+        criticalDps,
+        criticalTotalDamagePerMag,
+        criticalDpsEffective,
+        // Normal + Elemental
+        normalPlusElementDps,
+        normalPlusElementTotalDamagePerMag,
+        normalPlusElementDpsEffective,
+
+        // Critical + Elemental
+        criticalPlusElementDps,
+        criticalPlusElementTotalDamagePerMag,
+        criticalPlusElementDpsEffective,
+    } = useDpsWeapon(form)
 
     function saveWeapon() {
-        addWeapon({
-            name,
-            category,
-            damage,
-            fireTime,
-            magazine,
-            reloadTime,
-            criticalChange,
-            criticalMultiplier,
-            multiplier,
-            elementalDps,
-        })
-        removeWeapon(id)
+        addWeapon(form)
+        removeWeapon(form.id)
         reset()
     }
-
-    // Convert to numbers
-    const numDamage = Number(damage);
-    const numMultiplier = Number(multiplier);
-    const numFireTime = Number(fireTime);
-    const numMagazine = Number(magazine);
-    const numReloadTime = Number(reloadTime);
-    const numElementalDps = Number(elementalDps);
-
-    // Shots per second
-    const rps = getRoundsPerSecond(numFireTime);
-    const dMag = numDamage * numMultiplier * numMagazine
-
-    // Cycle time
-    const magazineTime = getMagazineTime(numMagazine, rps);
-    const totalCycleTime = magazineTime + numReloadTime;
-
-    // 1️⃣ Normal DPS
-    const normalDps = calcBaseDps({ damage: numDamage, multiplier: numMultiplier, fireTime: numFireTime })
-
-    // 2️⃣ Critical DPS
-    // const criticalHit = calcBaseDps(form);
-    const criticalAverage = calcCritDps(form);
-    const criticalDps = criticalAverage * rps;
-
-    // 3️⃣ Normal + Elemental DPS
-    const normalPlusElementDps = normalDps + numElementalDps;
-
-    // 4️⃣ Critical + Elemental DPS
-    const criticalPlusElementDps = criticalDps + numElementalDps;
-
-    // Effective DPS
-    const normalDpsEffective = getEffectiveDps(normalDps, numMagazine, totalCycleTime);
-    const criticalDpsEffective = getEffectiveDps(criticalDps, numMagazine, totalCycleTime);
-    const normalPlusElementDpsEffective = getEffectiveDps(normalPlusElementDps, numMagazine, totalCycleTime);
-    const criticalPlusElementDpsEffective = getEffectiveDps(criticalPlusElementDps, numMagazine, totalCycleTime);
 
     return (
         <TooltipProvider>
@@ -115,8 +78,19 @@ export default function Home() {
                     <div className="flex justify-between">
 
                         <h1 className="text-3xl font-bold">Weapon DPS Calculator</h1>
-                        <ListSavedWeaponDialog weapons={ weapons } selectWeapon={ setForm }
+                        <div className="space-x-2">
+
+                            <ListSavedWeaponDialog weapons={ weapons }
+                                                   selectWeapon={ setForm }
                                                removeWeapon={ removeWeapon }/>
+
+                            <Button
+                                variant={ setting.rps ? 'default' : 'destructive' }
+                                onClick={ () => setSetting("rps", !setting.rps) }
+                            >
+                                { setting.rps ? 'Enable RPS' : 'Disable RPS' }
+                            </Button>
+                        </div>
                     </div>
 
                     <Card>
@@ -126,38 +100,42 @@ export default function Home() {
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <MyInput
                                 icon={<Scroll />}
-                                title="Name" type="text" value={ name } onChange={ v => setField("name", v) }
+                                title="Name" type="text" value={ form.name } onChange={ v => setField("name", v) }
                                      placeholder="Name: Bazooka"/>
 
                             <MyInput
                                 icon={<Layers2 />}
-                                title="Category" type="text" value={ category }
+                                title="Category" type="text" value={ form.category }
                                      onChange={ v => setField("category", v) }
                                      placeholder="Category: Rocket"/>
 
                             <MyInput
                                 icon={<Sword/>}
-                                title="Damage" type="number" value={ damage }
+                                title="Damage" type="number" value={ form.damage }
                                      onChange={ v => setField("damage", v) }
                                      placeholder="Damage: 25"/>
                             <MyInput
                                 icon={<Swords />}
-                                title="Multiplier" type="number" value={ multiplier }
+                                title="Multiplier" type="number" value={ form.multiplier }
                                      onChange={ v => setField("multiplier", v) } placeholder="Multiplier: 2"/>
 
-                            <MyInput icon={<Clock/>} title="Rate of Fire (RPM)" type="number" value={ fireTime }
+                            <MyInput icon={ <Clock/> } title="Rate of Fire (RPM)" type="number" value={ form.fireTime }
                                      onChange={ v => setField("fireTime", v) } placeholder="RPM: 600"/>
-                            <MyInput icon={<Box/>} title="Magazine Size" type="number" value={ magazine }
+                            <MyInput icon={ <Box/> } title="Magazine Size" type="number" value={ form.magazine }
                                      onChange={ v => setField("magazine", v) } placeholder="Magazine Size: 30"/>
-                            <MyInput icon={<RefreshCcw/>} title="Reload Time (s)" type="number" value={ reloadTime }
+                            <MyInput icon={ <RefreshCcw/> } title="Reload Time (s)" type="number"
+                                     value={ form.reloadTime }
                                      onChange={ v => setField("reloadTime", v) } placeholder="Reload Time: 2.5"/>
 
 
-                            <MyInput icon={<Biohazard/>} title="Elemental DPS" type="number" value={ elementalDps }
+                            <MyInput icon={ <Biohazard/> } title="Elemental DPS" type="number"
+                                     value={ form.elementalDps }
                                      onChange={ v => setField("elementalDps", v) } placeholder="Elemental DPS: 50"/>
-                            <MyInput icon={<Bolt/>} title="Critical Chance (%)" type="number" value={ criticalChange }
+                            <MyInput icon={ <Bolt/> } title="Critical Chance (%)" type="number"
+                                     value={ form.criticalChange }
                                      onChange={ v => setField("criticalChange", v) } placeholder="Critical Chance: 30"/>
-                            <MyInput icon={<Sparkle/>} title="Critical Multiplier" type="number" value={ criticalMultiplier }
+                            <MyInput icon={ <Sparkle/> } title="Critical Multiplier" type="number"
+                                     value={ form.criticalMultiplier }
                                      onChange={ v => setField("criticalMultiplier", v) } placeholder="Multiplier: 2"/>
 
                         </CardContent>
@@ -171,24 +149,32 @@ export default function Home() {
                         <CardHeader>
                             <CardTitle>Results</CardTitle>
                             <div>
-                                <p>RPS = { fireTime } / 60 = <b>{ rps.toFixed(2) }</b> bullets/sec</p>
+
+
+                                <p className={ !setting.rps ? 'line-through' : '' }>RPS = { form.fireTime } / 60
+                                    = <b>{ rps }</b> bullets/sec</p>
+
+
+
+
 
                                 <p>
-                                    Cycle Time = { numMagazine } / { rps.toFixed(2) } + { reloadTime } ={ " " }
-                                    { totalCycleTime.toFixed(2) }s
+                                    Cycle Time = { form.magazine } / { rps } + { form.reloadTime } ={ " " }
+                                    { totalCycleTime }s
                                 </p>
 
-                                <p>DMag = ({ damage } × { multiplier }) × { magazine } = { dMag } </p>
+                                <p>DMag = ({ form.damage } × { form.multiplier }) × { form.magazine } = { dMag } </p>
 
-
-                                <p>
-                                    DPS (no reload&mag) = ({ damage } × { multiplier }) × { rps.toFixed(2) } ={ " " }
-                                    <b>{ normalDps.toFixed(2) }</b>
-                                </p>
 
                                 {/*<p>*/ }
-                                {/*    DPS (no ammo) = ({ damage } × { multiplier }) × { rps.toFixed(2) } ={ " " }*/ }
-                                {/*    <b>{ normalDps.toFixed(2) }</b>*/ }
+                                {/*    DPS (no reload&mag) = ({ form.damage } × { form.multiplier })*/ }
+                                {/*    × { rps } ={ " " }*/ }
+                                {/*    <b>{ normalDps }</b>*/ }
+                                {/*</p>*/ }
+
+                                {/*<p>*/ }
+                                {/*    DPS (no ammo) = ({ damage } × { multiplier }) × { rps } ={ " " }*/ }
+                                {/*    <b>{ normalDps }</b>*/ }
                                 {/*</p>*/ }
                             </div>
                         </CardHeader>
@@ -198,38 +184,37 @@ export default function Home() {
                             <div>
                                 <h3 className="font-semibold">Normal Damage</h3>
                                 <p>
-                                    DPS (Base) = <b>{ normalDps.toFixed(2) }</b>
+                                    Damage (Base) = ({ form.damage } × { form.multiplier }) = <b>{ normalDps }</b>
                                 </p>
-
                                 <p>Total Damage per Mag
-                                    = { normalDps.toFixed(2) } × { magazine } = { (normalDps * magazine).toFixed(2) }</p>
+                                    = { normalDps } × { form.magazine } = { (normalDps * form.magazine) }</p>
 
                                 <p>Effective DPS
-                                    = { (normalDps * magazine).toFixed(2) } / { totalCycleTime.toFixed(2) } = { normalDpsEffective.toFixed(2) }</p>
+                                    = { (normalDps * form.magazine) } / { totalCycleTime } = { normalDpsEffective }</p>
                             </div>
 
                             {/* With Critical */ }
                             <div>
                                 <h3 className="font-semibold">With Critical</h3>
-                                {/*<p>hit Damage = { criticalHit.toFixed(2) }</p>*/ }
-                                <p>Average Damage = { criticalAverage.toFixed(2) } </p>
-                                <p>DPS (Critical) = <b>{ criticalDps.toFixed(2) }</b></p>
-                                <p>Total Damage per Mag = { (criticalDps * magazine).toFixed(2) }</p>
-                                <p>Effective DPS = { criticalDpsEffective.toFixed(2) }</p>
+                                {/*<p>hit Damage = { criticalHit }</p>*/ }
+                                <p>Average Damage = { criticalAverage } </p>
+                                <p>Damage (Critical) = <b>{ criticalDps }</b></p>
+                                <p>Total Damage per Mag = { criticalTotalDamagePerMag }</p>
+                                <p>Effective DPS = { criticalDpsEffective }</p>
                             </div>
 
                             {/* Normal + Elemental */ }
                             <div>
                                 <h3 className="font-semibold">Normal + Elemental</h3>
                                 <p>
-                                    Base DPS + Elemental = { normalDps.toFixed(2) } + { elementalDps } ={ " " }
-                                    <b>{ normalPlusElementDps.toFixed(2) }</b>
+                                    Base Damage + Elemental = { normalDps } + { form.elementalDps } ={ " " }
+                                    <b>{ normalPlusElementDps }</b>
                                 </p>
                                 <p>
-                                    Total Damage per Mag = { (normalPlusElementDps * magazine).toFixed(2) }
+                                    Total Damage per Mag = { normalPlusElementTotalDamagePerMag }
                                 </p>
                                 <p>
-                                    Effective DPS = { normalPlusElementDpsEffective.toFixed(2) }
+                                    Effective DPS = { normalPlusElementDpsEffective }
                                 </p>
                             </div>
 
@@ -237,14 +222,14 @@ export default function Home() {
                             <div>
                                 <h3 className="font-semibold">Critical + Elemental</h3>
                                 <p>
-                                    Crit DPS + Elemental = { criticalDps.toFixed(2) } + { elementalDps } ={ " " }
-                                    <b>{ criticalPlusElementDps.toFixed(2) }</b>
+                                    Crit Damage + Elemental = { criticalDps } + { form.elementalDps } ={ " " }
+                                    <b>{ criticalPlusElementDps }</b>
                                 </p>
                                 <p>
-                                    Total Damage per Mag = { (criticalPlusElementDps * magazine).toFixed(2) }
+                                    Total Damage per Mag = { criticalPlusElementTotalDamagePerMag }
                                 </p>
                                 <p>
-                                    Effective DPS = { criticalPlusElementDpsEffective.toFixed(2) }
+                                    Effective DPS = { criticalPlusElementDpsEffective }
                                 </p>
                             </div>
                         </CardContent>
@@ -260,6 +245,7 @@ export function ListSavedWeaponDialog({ weapons, selectWeapon, removeWeapon, }: 
         selectWeapon: (weapon: Weapon) => void;
         removeWeapon: (id: string) => void;
     }) {
+
     const {
         searchTerm,
         categoryFilter,
@@ -418,22 +404,27 @@ export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
     selectWeapon: (w: Weapon) => void,
     removeWeapon: (w: Weapon['id']) => void
 }) {
+    const setting = useSettingStore(state => state.form);
+
     return (
-        <Card key={ w.id } className={ 'gap-0 ' }>
+        <Card className={ 'gap-0 ' }>
             <CardHeader className={ 'px-3 sm:px-6' }>
                 <CardTitle
-                    className={ 'capitalize' }>{ w.name } ({ w.category }) { calcBaseDps(w).toFixed(2) }</CardTitle>
+                    className={ 'capitalize' }>{ w.name } ({ w.category }) {
+                    trueDPS(w, setting.rps)
+                }
+
+                </CardTitle>
             </CardHeader>
             <CardContent className={ 'px-3 sm:px-6' }>
                 <div className="flex flex-row gap-2 sm:text-sm text-xs  ">
-                    <IconWeapon icon={ <Sword/> }
-                                text={ `${ w.damage } x ${ w.multiplier }` }/>
+                    <IconWeapon icon={ <Sword/> } text={ `${ w.damage } x ${ w.multiplier }` }/>
                     <IconWeapon icon={ <Clock/> } text={ `${ w.fireTime } ft` }/>
                     <IconWeapon icon={ <Box/> } text={ `${ w.magazine } mag` }/>
                     <IconWeapon icon={ <RefreshCw/> } text={ `${ w.reloadTime } rel` }/>
 
                     {/*<p>*/ }
-                    {/*    { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)*/ }
+                    {/*    { w.damage } x { w.multiplier } dmg - ({ dps } DPS)*/ }
                     {/*</p>*/ }
 
                     <div className="flex flex-col justify-between">
@@ -464,56 +455,6 @@ export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
                 </div>
             </CardContent>
         </Card>
-    );
-}
-
-
-export function MyInput(
-    {
-        title,
-        type = "text",
-        error,
-        value,
-        onChange,
-        placeholder,
-        icon
-    }: {
-        icon?: ReactNode
-        title: string;
-        type: "number" | "text";
-        error?: string;
-        value: number | string;
-        onChange: (value: string) => void;
-        placeholder?: string;
-    }) {
-    return (
-        <div className="flex flex-col gap-1">
-            <Label>{ title }</Label>
-            <div className=" flex items-center gap-1 border border-input rounded-lg px-3">
-                { icon }
-            <Input
-                type={ type }
-                onChange={ (e) => onChange(e.target.value) }
-                value={ value }
-                placeholder={ placeholder }
-                className="w-full ml-2 border-white"
-            />
-            </div>
-            { error && <p className="text-red-500 text-xs">Error: { error }</p> }
-        </div>
-    );
-}
-
-export function IconWeapon({ text, icon }: { text: string | number, icon: ReactNode }) {
-    return (
-        <div className=" border rounded-lg flex items-center flex-col gap-2 sm:px-4 px-3 py-3  ">
-            <p className="text-muted-foreground">
-                { icon }
-            </p>
-            <span className={ 'text-nowrap' }>
-            { text }
-            </span>
-        </div>
     );
 }
 
@@ -602,21 +543,21 @@ export function HomeOld() {
                     <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <h3 className="font-semibold">Normal Damage</h3>
-                            <p>RPS = { fireTime } / 60 = <b>{ rps.toFixed(2) }</b> bullets/sec</p>
-                            <p>DPS (no reload) = { damage } × { rps.toFixed(2) } = <b>{ dps.toFixed(2) }</b></p>
+                            <p>RPS = { fireTime } / 60 = <b>{ rps }</b> bullets/sec</p>
+                            <p>DPS (no reload) = { damage } × { rps } = <b>{ dps }</b></p>
                             <p>Cycle Time
-                                = { magazineRate.toFixed(2) } + { reloadTime } = <b>{ totalWithSiklus.toFixed(2) }s</b>
+                                = { magazineRate } + { reloadTime } = <b>{ totalWithSiklus }s</b>
                             </p>
-                            <p>Total Damage per Mag = { totalDamagePerMagazine.toFixed(2) }</p>
-                            <p>Effective DPS = { totalDpsEffective.toFixed(2) }</p>
+                            <p>Total Damage per Mag = { totalDamagePerMagazine }</p>
+                            <p>Effective DPS = { totalDpsEffective }</p>
                         </div>
 
                         <div>
                             <h3 className="font-semibold">With Critical</h3>
-                            <p>Average Damage = <b>{ criticalAverage.toFixed(2) }</b></p>
-                            <p>DPS (Critical) = { criticalDps.toFixed(2) }</p>
-                            <p>Total Damage per Mag = { criticalTotalDamagePerMagazine.toFixed(2) }</p>
-                            <p>Effective DPS = { criticalTotalDpsEffective.toFixed(2) }</p>
+                            <p>Average Damage = <b>{ criticalAverage }</b></p>
+                            <p>Damage (Critical) = { criticalDps }</p>
+                            <p>Total Damage per Mag = { criticalTotalDamagePerMagazine }</p>
+                            <p>Effective DPS = { criticalTotalDpsEffective }</p>
                         </div>
                     </CardContent>
 

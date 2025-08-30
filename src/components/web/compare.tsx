@@ -1,21 +1,21 @@
 "use client";
 
+import { StatTile, StatTileCompare, TinyStat, TinyStatCompare } from "@/components/mini/tinyStat.tsx";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { WeaponList } from "@/components/web/home.tsx";
+import { calcBaseDps, calcCritDps, fmt } from "@/hook/useDpsWeapon.ts";
 import { useTitle } from "@/hook/useTitle.ts";
-import { calcBaseDps, calcCritDps, fmt } from "@/lib/calculate-weapon.ts";
 import type { Weapon } from "@/store/useFormWeaponStore.ts";
+import { useSettingStore } from "@/store/useSettingStore.ts";
 import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore";
 import { motion } from "framer-motion";
 import {
-    ArrowDownIcon,
-    ArrowUpIcon,
     Biohazard,
     Bolt,
     BoxIcon,
@@ -35,6 +35,8 @@ import { Link } from "react-router-dom";
 export default function Compare() {
     useTitle('Compare Weapon')
     const { compareWeapons, setCompareWeapons } = useWeaponListStore();
+    const { form: setting, setField: setSetting } = useSettingStore();
+
 
     return (
         <TooltipProvider>
@@ -44,19 +46,31 @@ export default function Compare() {
                 transition={ { duration: 0.18 } }
                 className="h-full"
             >
-            <div className="space-y-2">
-                <WeaponCard weapon={ compareWeapons.weapon1 }
-                            onRemove={ () => setCompareWeapons(null, compareWeapons.weapon2) }
-                            isWeapon1={ true }/>
-                <WeaponCard weapon={ compareWeapons.weapon2 }
-                            onRemove={ () => setCompareWeapons(compareWeapons.weapon1, null) }
-                            isWeapon1={ false }/>
-                <WeaponCardCompare
-                    onSwap={ () => setCompareWeapons(compareWeapons.weapon2, compareWeapons.weapon1) }
-                    isWeapon1={ false }
-                    weapon1={ compareWeapons.weapon1 }
-                    weapon2={ compareWeapons.weapon2 }
-                /></div>
+                <div className=" space-y-8">
+                    <div className="flex justify-between">
+
+                        <h1 className="text-3xl font-bold">Weapon DPS Compare</h1>
+                        <Button
+                            variant={ setting.rps ? 'default' : 'destructive' }
+                            onClick={ () => setSetting("rps", !setting.rps) }
+                        >
+                            { setting.rps ? 'Enable RPS' : 'Disable RPS' }
+                        </Button>
+                    </div>
+
+                    <WeaponCard weapon={ compareWeapons.weapon1 }
+                                onRemove={ () => setCompareWeapons(null, compareWeapons.weapon2) }
+                                isWeapon1={ true }/>
+                    <WeaponCard weapon={ compareWeapons.weapon2 }
+                                onRemove={ () => setCompareWeapons(compareWeapons.weapon1, null) }
+                                isWeapon1={ false }/>
+                    <WeaponCardCompare
+                        onSwap={ () => setCompareWeapons(compareWeapons.weapon2, compareWeapons.weapon1) }
+                        isWeapon1={ false }
+                        weapon1={ compareWeapons.weapon1 }
+                        weapon2={ compareWeapons.weapon2 }
+                    />
+                </div>
             </motion.div>
         </TooltipProvider>
     );
@@ -189,14 +203,10 @@ export function ListSavedWeaponDialog({ isWeapon1 }: { isWeapon1: boolean }) {
                         </div>
 
                         {/* 🔹 Reset Button */ }
-                        <Button
-                            variant="outline"
-                            onClick={ resetFilters }
-                        >
-                            Reset
-                        </Button>
+                        <Button variant="outline" onClick={ resetFilters }>Reset</Button>
                     </div>
                 </DialogHeader>
+
                 <div className={ 'h-96 overflow-y-scroll' }>
                     { weapons.length > 0 ? (
                         <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -232,63 +242,6 @@ export function ListSavedWeaponDialog({ isWeapon1 }: { isWeapon1: boolean }) {
         </Dialog>
     )
         ;
-}
-
-export function WeaponListCompareOld(
-    {
-        w, removeWeapon, isWeapon1
-    }:
-    {
-        isWeapon1: boolean
-        w: Weapon,
-        selectWeapon
-            :
-            (w: Weapon) => void,
-        removeWeapon
-            :
-            (w: Weapon['id']) => void
-    }) {
-    const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
-
-    return (
-        <div
-            key={ w.id }
-            className="flex justify-between items-center border-b pb-1"
-        >
-            <div className="sm:text-sm text-sm">
-                <p className="font-bold">
-                    { w.name } ({ w.category })
-                </p>
-                <p>
-                    { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)
-                </p>
-                <p>
-                    { w.fireTime } FT - { w.magazine } mag
-                </p>
-            </div>
-            <div className="flex gap-2 flex-col">
-                <DialogClose asChild>
-                    <Button size="sm"
-                            onClick={ () => removeWeapon(w.id) }>
-                        Weapon { isWeapon1 ? '1' : '2' }
-                    </Button>
-                </DialogClose>
-                <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={ () => () => {
-                        // if (isWeapon1) {
-                        //     setCompareWeapons(w, compareWeapons.weapon2)
-                        // } else {
-                        //     setCompareWeapons(compareWeapons.weapon1, w)
-                        // }
-                    } }
-                >
-                    Delete
-                </Button>
-            </div>
-        </div>
-    );
 }
 
 
@@ -329,6 +282,7 @@ export function WeaponCard(
                 transition={ { duration: 0.18 } }
                 className="h-full"
             >
+
                 <Card
                     className={ `h-full overflow-hidden transition-shadow ${ selected ? "ring-2 ring-primary" : "hover:shadow-lg" }` }>
                     <CardHeader className="space-y-1">
@@ -350,7 +304,8 @@ export function WeaponCard(
                             <StatTile icon={ <Bolt className="size-4"/> } label="Crit DPS" value={ fmt(critDps) }
                                       hint="Base DPS × (1 + critChance × (critMult − 1))"/>
                             <StatTile icon={ <Biohazard className="size-4"/> } label="Elem. DPS"
-                                      value={ fmt(weapon.elementalDps) } hint="Elemental damage per second from procs"/>
+                                      value={ fmt(weapon.elementalDps) }
+                                      hint="Elemental damage per second from procs"/>
                         </div>
 
                         <Separator/>
@@ -394,17 +349,13 @@ export function WeaponCard(
                         </div>
                     </CardFooter>
                 </Card>
+
             </motion.div>
         </TooltipProvider>
     );
 }
 
-export function WeaponCardCompare(
-    {
-        weapon1,
-        weapon2,
-        onSelect, onSwap, selected, actionsSlot,
-    }: {
+export function WeaponCardCompare({ weapon1, weapon2, onSelect, onSwap, selected, actionsSlot, }: {
         weapon1: Weapon | null;
         weapon2: Weapon | null;
         onSelect?: (weapon: Weapon) => void;
@@ -450,6 +401,7 @@ export function WeaponCardCompare(
                 transition={ { duration: 0.18 } }
                 className="h-full"
             >
+
                 <Card
                     className={ `h-full overflow-hidden transition-shadow ${ selected ? "ring-2 ring-primary" : "hover:shadow-lg" }` }>
                     <CardHeader className="space-y-1">
@@ -512,8 +464,8 @@ export function WeaponCardCompare(
                                              value2={ fmt(weapon2.reloadTime, 2) }
                             />
                             <TinyStatCompare icon={ <Bolt className="size-4"/> } label="Crit Chance"
-                                             value1={ `${ fmt((weapon1.criticalChange ?? 0) , 1) }%` }
-                                             value2={ `${ fmt((weapon2.criticalChange ?? 0) , 1) }%` }
+                                             value1={ `${ fmt((weapon1.criticalChange ?? 0), 1) }%` }
+                                             value2={ `${ fmt((weapon2.criticalChange ?? 0), 1) }%` }
                             />
                             <TinyStatCompare icon={ <Bolt className="size-4"/> } label="Crit Mult"
                                              value1={ `${ fmt(weapon1.criticalMultiplier, 2) }×` }
@@ -550,106 +502,66 @@ export function WeaponCardCompare(
                         </div>
                     </CardFooter>
                 </Card>
+
+
             </motion.div>
         </TooltipProvider>
     );
 }
 
-function StatTile({ icon, label, value, hint }: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    hint?: string
-}) {
+export function WeaponListCompareOld(
+    {
+        w, removeWeapon, isWeapon1
+    }:
+    {
+        isWeapon1: boolean
+        w: Weapon,
+        selectWeapon
+            :
+            (w: Weapon) => void,
+        removeWeapon
+            :
+            (w: Weapon['id']) => void
+    }) {
+    const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
+
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <div className="flex items-center justify-between rounded-2xl border p-3">
-                    <div className="flex items-center gap-2">
-                        { icon }
-                        <span className="text-sm text-muted-foreground">{ label }</span>
-                    </div>
-                    <span className="font-semibold tabular-nums">{ value }</span>
-                </div>
-            </TooltipTrigger>
-
-            { hint ? <TooltipContent className="max-w-xs text-xs">{ hint }</TooltipContent> : null }
-
-        </Tooltip>
-    );
-}
-
-function StatTileCompare(
-    { icon, label, value1, value2, hint }:
-    { icon: React.ReactNode; label: string; value1: string; value2: string; hint?: string }
-) {
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <div className="flex items-center justify-between rounded-2xl border p-3">
-                    <div className="flex items-center gap-2">
-                        { icon }
-                        <span className="text-sm text-muted-foreground">{ label }</span>
-                    </div>
-                    <span className="font-semibold tabular-nums text-red-400">{ value1 }</span>
-                    <span className="font-semibold tabular-nums text-blue-400">{ value2 }</span>
-                    <span className={ `font-medium tabular-nums  ${ value1 > value2
-                        ? 'text-green-400'
-                        : 'text-red-600'
-                    }` }>
-                        { value1 > value2
-                            ? <ArrowUpIcon/>
-                            : <ArrowDownIcon/>
-                        }
-                    </span>
-                </div>
-            </TooltipTrigger>
-
-            { hint ? <TooltipContent className="max-w-xs text-xs">{ hint }</TooltipContent> : null }
-
-        </Tooltip>
-    );
-}
-
-function TinyStat(
-    { icon, label, value }:
-    { icon: React.ReactNode; label: string; value: string }
-) {
-    return (
-        <div className="flex items-center justify-between rounded-xl bg-muted/30 p-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                { icon }
-                { label }
+        <div
+            key={ w.id }
+            className="flex justify-between items-center border-b pb-1"
+        >
+            <div className="sm:text-sm text-sm">
+                <p className="font-bold">
+                    { w.name } ({ w.category })
+                </p>
+                <p>
+                    { w.damage } x { w.multiplier } dmg - ({ dps.toFixed(2) } DPS)
+                </p>
+                <p>
+                    { w.fireTime } FT - { w.magazine } mag
+                </p>
             </div>
-            <div className="font-medium tabular-nums">{ value }</div>
-        </div>
-    );
-}
-
-function TinyStatCompare(
-    { icon, label, value1, value2 }:
-    { icon: React.ReactNode; label: string; value1: string; value2: string }
-) {
-
-    return (
-        <div className="flex items-center justify-between rounded-xl bg-muted/30 p-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                { icon }
-                { label }
-            </div>
-            <div className="font-medium tabular-nums text-red-400">{ value1 }</div>
-            <div className="font-medium tabular-nums text-blue-400 ">{ value2 }</div>
-            <div className={ `font-medium tabular-nums  ${ value1 > value2
-                ? 'text-green-400'
-                : 'text-red-600'
-
-            }` }>
-                { value1 > value2
-                    ? <ArrowUpIcon/>
-                    : <ArrowDownIcon/>
-                }
+            <div className="flex gap-2 flex-col">
+                <DialogClose asChild>
+                    <Button size="sm"
+                            onClick={ () => removeWeapon(w.id) }>
+                        Weapon { isWeapon1 ? '1' : '2' }
+                    </Button>
+                </DialogClose>
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={ () => () => {
+                        // if (isWeapon1) {
+                        //     setCompareWeapons(w, compareWeapons.weapon2)
+                        // } else {
+                        //     setCompareWeapons(compareWeapons.weapon1, w)
+                        // }
+                    } }
+                >
+                    Delete
+                </Button>
             </div>
         </div>
     );
 }
-

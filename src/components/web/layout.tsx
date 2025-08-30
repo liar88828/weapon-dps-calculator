@@ -1,22 +1,37 @@
-import { Link, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
 export function Layout() {
     return (
         <div className="flex flex-col min-h-screen">
             {/* Shared navigation */ }
             <nav className="bg-gray-100 border-b border-gray-300 p-4">
-                <div className="container mx-auto flex gap-4">
-                    <Link to="/" className="hover:underline">
+                <div className="flex gap-4">
+                    <NavLink
+                        to="/"
+                        className={ ({ isActive }) =>
+                            isActive ? "underline font-semibold" : "hover:underline"
+                        }
+                    >
                         Home
-                    </Link>
-                    <Link to="/compare" className="hover:underline">
+                    </NavLink>
+
+                    <NavLink
+                        to="/compare"
+                        className={ ({ isActive }) =>
+                            isActive ? "underline font-semibold" : "hover:underline"
+                        }
+                    >
                         Compare
-                    </Link>
+                    </NavLink>
 
-                    <Link to="/about" className="hover:underline">
+                    <NavLink
+                        to="/about"
+                        className={ ({ isActive }) =>
+                            isActive ? "underline font-semibold" : "hover:underline"
+                        }
+                    >
                         About
-                    </Link>
-
+                    </NavLink>
                 </div>
             </nav>
 
