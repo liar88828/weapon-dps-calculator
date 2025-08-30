@@ -59,8 +59,11 @@ export function getMagazineTime(magazineSize: number, roundsPerSecond: number) {
 export const trueDPS = (w: Weapon, rps: boolean) => {
     const d_mag = (w.damage * w.multiplier * w.magazine)
     const mag_rel = (w.magazine / getRoundsPerSecond(w.fireTime, rps)) + w.reloadTime
-    return (d_mag / mag_rel).toFixed(2)
+    return (d_mag / mag_rel)
 }
+// export const trueDPSString = (w: Weapon, rps: boolean) => {
+//     return trueDPS(w, rps).toFixed(2)
+// }
 
 export const useDpsWeapon = (weapon: Weapon) => {
     const { form: setting, } = useSettingStore();

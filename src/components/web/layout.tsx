@@ -32,6 +32,15 @@ export function Layout() {
                     >
                         About
                     </NavLink>
+
+                    <NavLink
+                        to="/saved"
+                        className={ ({ isActive }) =>
+                            isActive ? "underline font-semibold" : "hover:underline"
+                        }
+                    >
+                        Saved
+                    </NavLink>
                 </div>
             </nav>
 

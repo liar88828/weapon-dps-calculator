@@ -398,9 +398,10 @@ export function ListSavedWeaponDialog({ weapons, selectWeapon, removeWeapon, }: 
     );
 }
 
-export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
+export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1, isDialog = true }: {
     w: Weapon,
     isWeapon1?: boolean,
+    isDialog?: boolean,
     selectWeapon: (w: Weapon) => void,
     removeWeapon: (w: Weapon['id']) => void
 }) {
@@ -411,7 +412,7 @@ export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
             <CardHeader className={ 'px-3 sm:px-6' }>
                 <CardTitle
                     className={ 'capitalize' }>{ w.name } ({ w.category }) {
-                    trueDPS(w, setting.rps)
+                    trueDPS(w, setting.rps).toFixed(2)
                 }
 
                 </CardTitle>
@@ -428,6 +429,7 @@ export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
                     {/*</p>*/ }
 
                     <div className="flex flex-col justify-between">
+                        { isDialog ?
                         <DialogClose asChild>
                             <Button
                                 size="sm" onClick={ () => selectWeapon(w) }>
@@ -441,6 +443,7 @@ export function WeaponList({ w, removeWeapon, selectWeapon, isWeapon1 }: {
 
                             </Button>
                         </DialogClose>
+                            : null }
 
                         <Button
                             variant="destructive"
