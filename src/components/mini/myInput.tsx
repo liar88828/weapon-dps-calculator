@@ -23,7 +23,7 @@ export function MyInput(
     return (
         <div className="flex flex-col gap-1">
             <Label>{ title }</Label>
-            <div className=" flex items-center gap-1 border border-input rounded-lg px-3">
+            <div className=" flex items-center gap-1 border border-input rounded-lg pl-3">
                 { icon }
                 <Input
                     type={ type }

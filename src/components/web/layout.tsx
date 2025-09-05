@@ -1,47 +1,33 @@
+import SettingDialog from "@/components/web/setting.tsx";
 import { NavLink, Outlet } from "react-router-dom";
 
 export function Layout() {
+    const navItems = [
+        { to: "/", label: "Home" },
+        { to: "/compare", label: "Compare" },
+        { to: "/saved", label: "Saved" },
+        { to: "/about", label: "About" },
+    ];
+
     return (
         <div className="flex flex-col min-h-screen">
             {/* Shared navigation */ }
-            <nav className="bg-gray-100 border-b border-gray-300 p-4">
+            <nav className="bg-gray-100 border-b border-gray-300 p-4 flex justify-between">
                 <div className="flex gap-4">
+                    { navItems.map((item) => (
                     <NavLink
-                        to="/"
+                        key={ item.to }
+                        to={ item.to }
                         className={ ({ isActive }) =>
                             isActive ? "underline font-semibold" : "hover:underline"
                         }
                     >
-                        Home
+                        { item.label }
                     </NavLink>
-
-                    <NavLink
-                        to="/compare"
-                        className={ ({ isActive }) =>
-                            isActive ? "underline font-semibold" : "hover:underline"
-                        }
-                    >
-                        Compare
-                    </NavLink>
-
-                    <NavLink
-                        to="/about"
-                        className={ ({ isActive }) =>
-                            isActive ? "underline font-semibold" : "hover:underline"
-                        }
-                    >
-                        About
-                    </NavLink>
-
-                    <NavLink
-                        to="/saved"
-                        className={ ({ isActive }) =>
-                            isActive ? "underline font-semibold" : "hover:underline"
-                        }
-                    >
-                        Saved
-                    </NavLink>
+                    )) }
                 </div>
+
+                <SettingDialog/>
             </nav>
 
             {/* Where nested routes get rendered */ }

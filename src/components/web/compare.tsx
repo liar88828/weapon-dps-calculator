@@ -8,10 +8,9 @@ import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTr
 import { Separator } from "@/components/ui/separator";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WeaponList } from "@/components/web/home.tsx";
-import { calcBaseDps, calcCritDps, fmt } from "@/hook/useDpsWeapon.ts";
+import { calcBaseDps, calcCritDps, fmt, useDpsWeaponBasic } from "@/hook/useDpsWeapon.ts";
 import { useTitle } from "@/hook/useTitle.ts";
 import type { Weapon } from "@/store/useFormWeaponStore.ts";
-import { useSettingStore } from "@/store/useSettingStore.ts";
 import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore";
 import { motion } from "framer-motion";
@@ -29,14 +28,11 @@ import {
     Sword,
     Swords
 } from "lucide-react";
-import * as React from "react";
 import { Link } from "react-router-dom";
 
 export default function Compare() {
     useTitle('Compare Weapon')
     const { compareWeapons, setCompareWeapons } = useWeaponListStore();
-    const { form: setting, setField: setSetting } = useSettingStore();
-
 
     return (
         <TooltipProvider>
@@ -48,14 +44,7 @@ export default function Compare() {
             >
                 <div className=" space-y-8">
                     <div className="flex justify-between">
-
                         <h1 className="text-3xl font-bold">Weapon DPS Compare</h1>
-                        <Button
-                            variant={ setting.rps ? 'default' : 'destructive' }
-                            onClick={ () => setSetting("rps", !setting.rps) }
-                        >
-                            { setting.rps ? 'Enable RPS' : 'Disable RPS' }
-                        </Button>
                     </div>
 
                     <WeaponCard weapon={ compareWeapons.weapon1 }
@@ -214,7 +203,7 @@ export function ListSavedWeaponDialog({ isWeapon1 }: { isWeapon1: boolean }) {
                                 return (
                                     <WeaponList
                                         key={ w.id }
-                                        w={ w }
+                                        weapon={ w }
                                         isWeapon1={ isWeapon1 }
                                         removeWeapon={ removeWeapon }
                                         selectWeapon={ (w) => {
@@ -271,9 +260,7 @@ export function WeaponCard(
         </Card>
     }
 
-    const baseDps = calcBaseDps(weapon);
-    const critDps = calcCritDps(weapon);
-
+    const { criticalDps, criticalPlusElementDps, normalDps } = useDpsWeaponBasic(weapon)
     return (
         <TooltipProvider>
             <motion.div
@@ -299,12 +286,19 @@ export function WeaponCard(
                     <CardContent className="space-y-4">
                         {/* DPS Row */ }
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <StatTile icon={ <Gauge className="size-4"/> } label="Base DPS" value={ fmt(baseDps) }
+                            <StatTile icon={ <Gauge className="size-4"/> }
+                                      label="Base DPS"
+                                      value={ normalDps }
                                       hint="damage / fireTime × multiplier"/>
-                            <StatTile icon={ <Bolt className="size-4"/> } label="Crit DPS" value={ fmt(critDps) }
+
+                            <StatTile icon={ <Bolt className="size-4"/> }
+                                      label="Crit DPS"
+                                      value={ criticalDps }
                                       hint="Base DPS × (1 + critChance × (critMult − 1))"/>
-                            <StatTile icon={ <Biohazard className="size-4"/> } label="Elem. DPS"
-                                      value={ fmt(weapon.elementalDps) }
+
+                            <StatTile icon={ <Biohazard className="size-4"/> }
+                                      label="Elem. DPS"
+                                      value={ criticalPlusElementDps }
                                       hint="Elemental damage per second from procs"/>
                         </div>
 
@@ -312,17 +306,28 @@ export function WeaponCard(
 
                         {/* Core stats */ }
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            <TinyStat icon={ <Sword className="size-4"/> } label="Damage"
-                                      value={ fmt(weapon.damage) }/>
-                            <TinyStat icon={ <BoxIcon className="size-4"/> } label="Magazine"
+                            <TinyStat icon={ <Sword className="size-4"/> }
+                                      label="Damage"
+                                      value={ fmt(weapon.damage * weapon.multiplier) }/>
+
+                            <TinyStat icon={ <BoxIcon className="size-4"/> }
+                                      label="Magazine"
                                       value={ fmt(weapon.magazine, 0) }/>
-                            <TinyStat icon={ <Clock className="size-4"/> } label="Fire Time (s)"
+
+                            <TinyStat icon={ <Clock className="size-4"/> }
+                                      label="Fire Time (s)"
                                       value={ fmt(weapon.fireTime, 2) }/>
-                            <TinyStat icon={ <RefreshCcw className="size-4"/> } label="Reload (s)"
+
+                            <TinyStat icon={ <RefreshCcw className="size-4"/> }
+                                      label="Reload (s)"
                                       value={ fmt(weapon.reloadTime, 2) }/>
-                            <TinyStat icon={ <Bolt className="size-4"/> } label="Crit Chance"
+
+                            <TinyStat icon={ <Bolt className="size-4"/> }
+                                      label="Crit Chance"
                                       value={ `${ fmt((weapon.criticalChange ?? 0), 1) }%` }/>
-                            <TinyStat icon={ <Sparkle className="size-4"/> } label="Crit Mult"
+
+                            <TinyStat icon={ <Sparkle className="size-4"/> }
+                                      label="Crit Mult"
                                       value={ `${ fmt(weapon.criticalMultiplier, 2) }×` }/>
                         </div>
                     </CardContent>

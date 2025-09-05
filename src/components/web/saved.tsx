@@ -237,7 +237,7 @@ export default function Saved() {
                                         <WeaponList
                                             isDialog={ false }
                                             key={ w.id }
-                                            w={ w }
+                                            weapon={ w }
                                             isWeapon1={ false }
                                             removeWeapon={ removeWeapon }
                                             selectWeapon={ () => {

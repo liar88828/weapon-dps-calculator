@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/formatter.ts";
 import type { Weapon } from "@/store/useFormWeaponStore.ts";
 import { useSettingStore } from "@/store/useSettingStore.ts";
 
@@ -56,9 +57,9 @@ export function getMagazineTime(magazineSize: number, roundsPerSecond: number) {
         : 0;
 }
 
-export const trueDPS = (w: Weapon, rps: boolean) => {
+export const trueDPS = (w: Weapon, isRps: boolean) => {
     const d_mag = (w.damage * w.multiplier * w.magazine)
-    const mag_rel = (w.magazine / getRoundsPerSecond(w.fireTime, rps)) + w.reloadTime
+    const mag_rel = (w.magazine / getRoundsPerSecond(w.fireTime, isRps)) + w.reloadTime
     return (d_mag / mag_rel)
 }
 // export const trueDPSString = (w: Weapon, rps: boolean) => {
@@ -66,25 +67,25 @@ export const trueDPS = (w: Weapon, rps: boolean) => {
 // }
 
 export const useDpsWeapon = (weapon: Weapon) => {
-    const { form: setting, } = useSettingStore();
+    const { form: setting } = useSettingStore();
 
     // Convert to numbers
     const numDamage = Number(weapon.damage);
     const numMultiplier = Number(weapon.multiplier);
     const numFireTime = Number(weapon.fireTime);
-    const numMagazine = Number(weapon.magazine);
-    const numReloadTime = Number(weapon.reloadTime);
+    const numMagazine = setting.infinityAmmo ? 1 : Number(weapon.magazine);
+    const numReloadTime = setting.noReload ? 1 : Number(weapon.reloadTime);
     const numElementalDps = Number(weapon.elementalDps);
 
     // Shots per second
     const rps = getRoundsPerSecond(numFireTime, setting.rps);
-    const dMag = numDamage * numMultiplier * numMagazine
-
-    // Cycle time
-    const totalCycleTime = getMagazineTime(numMagazine, rps) + numReloadTime
 
     // 1️⃣ Normal DPS
     const normalDps = calcBaseDps({ damage: numDamage, multiplier: numMultiplier, })
+    const dMag = normalDps * numMagazine
+
+    // Cycle time
+    const totalCycleTime = getMagazineTime(numMagazine, rps) + numReloadTime
 
     // 2️⃣ Critical DPS
     // const criticalHit = calcBaseDps(weapon);
@@ -104,28 +105,73 @@ export const useDpsWeapon = (weapon: Weapon) => {
     const criticalPlusElementDpsEffective = getEffectiveDps(criticalPlusElementDps, numMagazine, totalCycleTime)
     return {
         // Normal Damage
-        rps: rps.toFixed(2),
-        dMag,
+        rps: rps.toFixed(1),
+        dMag: formatNumber(dMag),
         totalCycleTime: totalCycleTime.toFixed(2),
-        normalDps,
-        normalDpsEffective: normalDpsEffective.toFixed(2),
+        normalDps: formatNumber(normalDps),
+        normalDpsEffective: formatNumber(normalDpsEffective),
+        standarDps: formatNumber(normalDps * rps),
 
         // With Critical
-        criticalAverage,
-        criticalDps: criticalDps.toFixed(2),
-        criticalTotalDamagePerMag: (criticalDps * weapon.magazine).toFixed(2),
-        criticalDpsEffective: criticalDpsEffective.toFixed(2),
+        criticalAverage: formatNumber(criticalAverage),
+        criticalDps: formatNumber(criticalDps),
+        criticalTotalDamagePerMag: formatNumber(criticalDps * weapon.magazine),
+        criticalDpsEffective: formatNumber(criticalDpsEffective),
 
         // Normal + Elemental
-        normalPlusElementDps,
-        normalPlusElementTotalDamagePerMag: (normalPlusElementDps * weapon.magazine),
-        normalPlusElementDpsEffective: normalPlusElementDpsEffective.toFixed(2),
+        normalPlusElementDps: formatNumber(normalPlusElementDps),
+        normalPlusElementTotalDamagePerMag: formatNumber(normalPlusElementDps * weapon.magazine),
+        normalPlusElementDpsEffective: formatNumber(normalPlusElementDpsEffective),
 
         // Critical + Elemental
-        criticalPlusElementDps: criticalPlusElementDps.toFixed(2),
-        criticalPlusElementTotalDamagePerMag: (criticalPlusElementDps * weapon.magazine).toFixed(2),
-        criticalPlusElementDpsEffective: criticalPlusElementDpsEffective.toFixed(2),
+        criticalPlusElementDps: formatNumber(criticalPlusElementDps),
+        criticalPlusElementTotalDamagePerMag: formatNumber((criticalPlusElementDps * weapon.magazine)),
+        criticalPlusElementDpsEffective: formatNumber(criticalPlusElementDpsEffective)
 
     }
 
 }
+
+export const useDpsWeaponBasic = (weapon: Weapon) => {
+    const { form: setting } = useSettingStore();
+
+    // Convert to numbers
+    const numDamage = Number(weapon.damage);
+    const numMultiplier = Number(weapon.multiplier);
+    const numFireTime = Number(weapon.fireTime);
+    const numElementalDps = Number(weapon.elementalDps);
+
+    // Shots per second
+    const rps = getRoundsPerSecond(numFireTime, setting.rps);
+
+    // 1️⃣ Normal DPS
+    const normalDps = calcBaseDps({ damage: numDamage, multiplier: numMultiplier, })
+
+    // 2️⃣ Critical DPS
+    // const criticalHit = calcBaseDps(weapon);
+    const criticalAverage = calcCritDps(weapon);
+    const criticalDps = criticalAverage * rps;
+
+    // 3️⃣ Normal + Elemental DPS
+    const normalPlusElementDps = normalDps + numElementalDps;
+
+    // 4️⃣ Critical + Elemental DPS
+    const criticalPlusElementDps = criticalDps + numElementalDps;
+
+    return {
+        // Normal Damage
+        normalDps: formatNumber(normalDps),
+
+        // With Critical
+        criticalDps: formatNumber(criticalDps),
+
+        // Normal + Elemental
+        normalPlusElementDps: formatNumber(normalPlusElementDps),
+
+        // Critical + Elemental
+        criticalPlusElementDps: formatNumber(criticalPlusElementDps),
+
+    }
+
+}
+
