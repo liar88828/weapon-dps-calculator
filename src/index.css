@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+.btn-success {
+  @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-300;
+}
+
+.btn-warning {
+  @apply bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-300;
+}
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

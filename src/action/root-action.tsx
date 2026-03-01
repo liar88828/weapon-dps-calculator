@@ -1,3 +1,3 @@
 export async function loadRootData() {
-    return 'hello root load action'
+  return "hello root load action";
 }

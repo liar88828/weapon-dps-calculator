@@ -11,39 +11,41 @@ const About = lazy(() => import("@/components/web/about.tsx"));
 const ListSavedWeaponDialog = lazy(() => import("@/components/web/saved.tsx"));
 
 // Small wrapper to handle suspense
-const withSuspense = (Component: React.LazyExoticComponent<() => JSX.Element>) => (
-    <Suspense fallback={ <div className="p-4">Loading...</div> }>
-        <Component/>
-    </Suspense>
+const withSuspense = (
+  Component: React.LazyExoticComponent<() => JSX.Element>,
+) => (
+  <Suspense fallback={<div className="p-4">Loading...</div>}>
+    <Component />
+  </Suspense>
 );
 
 export const router = createBrowserRouter(
-    [
-        {
-            path: "/",
-            Component: Layout,
-            children: [
-                {
-                    loader: loadRootData,
-                    index: true,
-                    element: withSuspense(Home),
-                },
-                {
-                    path: "compare",
-                    element: withSuspense(Compare),
-                },
-                {
-                    path: "about",
-                    element: withSuspense(About),
-                },
-                {
-                    path: "saved",
-                    element: withSuspense(ListSavedWeaponDialog),
-                },
-            ],
-        },
-    ],
+  [
     {
-        basename: "/weapon-dps-calculator",
-    }
+      path: "/",
+      Component: Layout,
+      children: [
+        {
+          loader: loadRootData,
+          index: true,
+          element: withSuspense(Home),
+        },
+        {
+          path: "compare",
+          element: withSuspense(Compare),
+        },
+        {
+          path: "about",
+          element: withSuspense(About),
+        },
+        {
+          path: "saved",
+          element: withSuspense(ListSavedWeaponDialog),
+        },
+      ],
+    },
+  ],
+  {
+    basename: "/weapon-dps-calculator",
+  },
 );

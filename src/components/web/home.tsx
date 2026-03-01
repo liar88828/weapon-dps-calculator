@@ -1,21 +1,30 @@
 import { IconWeapon } from "@/components/mini/iconWeapon.tsx";
 import { MyInput } from "@/components/mini/myInput.tsx";
+
+import { Button } from "@/components/ui/button.tsx";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button.tsx"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card.tsx"
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger, } from "@/components/ui/dialog"
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card.tsx";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label.tsx";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useDpsWeapon, useDpsWeaponBasic } from "@/hook/useDpsWeapon.ts";
 import { useTitle } from "@/hook/useTitle.ts";
@@ -25,512 +34,584 @@ import { useWeaponFilterStore } from "@/store/useWeaponFilterStore.ts";
 import { useWeaponListStore } from "@/store/useWeaponListStore.ts";
 import { motion } from "framer-motion";
 import {
-    Biohazard,
-    Bolt,
-    Box,
-    Clock,
-    Layers2,
-    Pickaxe,
-    Plus,
-    RefreshCcw,
-    RefreshCw,
-    RotateCcw,
-    Scroll,
-    Sparkle,
-    Sword,
-    Swords,
-    TrashIcon
+  Biohazard,
+  Bolt,
+  Box,
+  Clock,
+  Layers2,
+  Pickaxe,
+  Plus,
+  RefreshCcw,
+  RefreshCw,
+  RotateCcw,
+  Scroll,
+  Sparkle,
+  Sword,
+  Swords,
+  TrashIcon,
+  Upload,
 } from "lucide-react";
-import { type ReactNode } from "react"
+
+import { AlertButton } from "./components/alerts";
+import { CalculateText } from "./components/texts";
+import { useExcelService } from "./service/excelService";
+import { randomWeapon } from "./service/randomService";
 
 export default function Home() {
-    useTitle('Home')
+  useTitle("Home");
 
-    const { setField, reset, setForm, form } = useFormWeaponStore();
-    const { form: setting } = useSettingStore();
-    const { weapons, removeWeapon, addWeapon } = useWeaponListStore();
-    const {
-        // Normal Damage
-        rps,
-        dMag,
-        totalCycleTime,
-        normalDpsEffective,
-        normalDps,
-        standarDps,
+  const { setField, reset, setForm, form } = useFormWeaponStore();
+  const { form: setting } = useSettingStore();
+  const { weapons, removeWeapon, addWeapon } = useWeaponListStore();
+  const {
+    // Normal Damage
+    rps,
+    dMag,
+    totalCycleTime,
+    normalDpsEffective,
+    normalDps,
+    standarDps,
 
-        // With Critical
-        criticalAverage,
-        criticalDps,
-        criticalTotalDamagePerMag,
-        criticalDpsEffective,
-        // Normal + Elemental
-        normalPlusElementDps,
-        normalPlusElementTotalDamagePerMag,
-        normalPlusElementDpsEffective,
+    // With Critical
+    criticalAverage,
+    criticalDps,
+    criticalTotalDamagePerMag,
+    criticalDpsEffective,
+    // Normal + Elemental
+    normalPlusElementDps,
+    normalPlusElementTotalDamagePerMag,
+    normalPlusElementDpsEffective,
 
-        // Critical + Elemental
-        criticalPlusElementDps,
-        criticalPlusElementTotalDamagePerMag,
-        criticalPlusElementDpsEffective,
-    } = useDpsWeapon(form)
+    // Critical + Elemental
+    criticalPlusElementDps,
+    criticalPlusElementTotalDamagePerMag,
+    criticalPlusElementDpsEffective,
+  } = useDpsWeapon(form);
 
-    function saveWeapon() {
-        addWeapon(form)
-        removeWeapon(form.id)
-        reset()
-    }
+  const { exportExcel, importExcel } = useExcelService();
+  const time = setting.rps ? "60" : "OFF";
 
-    const time = setting.rps ? '60' : 'OFF'
-    return (
-        <TooltipProvider>
-            <motion.div
-                initial={ { opacity: 0, y: 8 } }
-                animate={ { opacity: 1, y: 0 } }
-                transition={ { duration: 0.18 } }
-                className="h-full"
-            >
-                <div className=" space-y-8">
-                    <div className="flex justify-between">
+  function saveWeapon() {
+    addWeapon(form);
+    removeWeapon(form.id);
+    reset();
+  }
 
-                        <h1 className="text-3xl font-bold">Weapon DPS Calculator</h1>
-                        <div className="flex gap-2 items-center">
+  return (
+    <TooltipProvider>
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        className="h-full"
+      >
+        <div className=" space-y-8">
+          <div className="flex justify-between">
+            <h1 className="text-3xl font-bold">Weapon DPS Calculator</h1>
 
-                            <ListSavedWeaponDialog
-                                weapons={ weapons }
-                                selectWeapon={ setForm }
-                                removeWeapon={ removeWeapon }/>
+            <div className="flex gap-2 items-center">
+              <Button className="btn-warning" onClick={importExcel}>
+                <Upload />
+                Import Excel
+              </Button>
+              <Button className="btn-success" onClick={exportExcel}>
+                <Upload />
+                Export Excel
+              </Button>
+              <ListSavedWeaponDialog
+                weapons={weapons}
+                selectWeapon={setForm}
+                removeWeapon={removeWeapon}
+              />
+            </div>
+          </div>
 
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-end">
+                <CardTitle className="text-2xl font-bold">
+                  Weapon Stats
+                </CardTitle>
+                <Button onClick={() => randomWeapon(setForm)}>
+                  <RefreshCcw />
+                  Random Weapon
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <MyInput
+                icon={<Scroll />}
+                title="Name"
+                type="text"
+                value={form.name}
+                onChange={(v) => setField("name", v)}
+                placeholder="Name: Bazooka"
+              />
 
-                        </div>
-                    </div>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Weapon Stats</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <MyInput
-                                icon={ <Scroll/> }
-                                title="Name" type="text" value={ form.name } onChange={ v => setField("name", v) }
-                                placeholder="Name: Bazooka"/>
-
-                            <div className="flex flex-col gap-1">
-                                <Label>Category</Label>
-                                <div className=" flex items-center gap-1 border border-input rounded-lg pl-3">
-                                    <Layers2/>
-                                    <Select onValueChange={ (v) => setField("category", v) }
-                                            value={ form.category }
-                                    >
-                                        <SelectTrigger className={ 'w-full ml-2 border-white' }>
-
-                                            <SelectValue placeholder="Category:"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            { setting.category.map((opt) => (
-                                                <SelectItem key={ opt.label } value={ opt.label.toString() }>
-                                                    { opt.label }
-                                                </SelectItem>
-                                            )) }
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <MyInput
-                                icon={ <Sword/> }
-                                title="Damage" type="number" value={ form.damage }
-                                onChange={ v => setField("damage", v) }
-                                placeholder="Damage: 25"/>
-
-                            <MyInput
-                                icon={ <Swords/> }
-                                title="Multiplier" type="number" value={ form.multiplier }
-                                onChange={ v => setField("multiplier", v) } placeholder="Multiplier: 2"/>
-
-                            <MyInput icon={ <Clock/> } title="Rate of Fire (RPM)" type="number" value={ form.fireTime }
-                                     onChange={ v => setField("fireTime", v) } placeholder="RPM: 600"/>
-                            <MyInput icon={ <Box/> } title="Magazine Size" type="number" value={ form.magazine }
-                                     onChange={ v => setField("magazine", v) } placeholder="Magazine Size: 30"/>
-                            <MyInput icon={ <RefreshCcw/> } title="Reload Time (s)" type="number"
-                                     value={ form.reloadTime }
-                                     onChange={ v => setField("reloadTime", v) } placeholder="Reload Time: 2.5"/>
-
-
-                            <MyInput icon={ <Biohazard/> } title="Elemental DPS" type="number"
-                                     value={ form.elementalDps }
-                                     onChange={ v => setField("elementalDps", v) } placeholder="Elemental DPS: 50"/>
-                            <MyInput icon={ <Bolt/> } title="Critical Chance (%)" type="number"
-                                     value={ form.criticalChange }
-                                     onChange={ v => setField("criticalChange", v) } placeholder="Critical Chance: 30"/>
-                            <MyInput icon={ <Sparkle/> } title="Critical Multiplier" type="number"
-                                     value={ form.criticalMultiplier }
-                                     onChange={ v => setField("criticalMultiplier", v) } placeholder="Multiplier: 2"/>
-
-                        </CardContent>
-                        <CardFooter className="gap-2">
-                            <Button onClick={ saveWeapon }> <Plus/> Add</Button>
-                            <AlertButton
-                                title={ "Reset Weapon" }
-                                desc="This will reset all weapon settings to default. Are you sure?"
-                                onConfirm={ reset }>
-                                <Button variant="destructive">
-                                    <RotateCcw/>
-                                    Reset
-                                </Button>
-                            </AlertButton>
-
-                        </CardFooter>
-                    </Card>
-
-                    <Card className={ 'text-sm sm:text-base' }>
-                        <CardHeader>
-                            <CardTitle>Results</CardTitle>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <CalculateText
-                                    title={ "RPS" }
-                                    cal={ <span>Fire Rate / { time } </span> }
-                                    result={ <span>{ form.fireTime } / { time } = <b
-                                        className="text-blue-600">{ rps }</b> bullets/sec</span> }
-                                />
-                                <CalculateText
-                                    title={ "Standard DPS" }
-                                    cal={ <span> (Damage × Mul) × RPS</span> }
-                                    result={ <span>({ form.damage } × { form.multiplier }) × { rps } = <b
-                                        className="text-green-600">{ standarDps }</b></span> }
-                                />
-
-                                <CalculateText
-                                    title={ "Cycle Time" }
-                                    cal={ <span>Mag / RPS + Reload Time </span> }
-                                    result={ <span> { form.magazine } / { rps } + { form.reloadTime } = <b
-                                        className="text-purple-600">{ totalCycleTime }s</b></span> }
-                                />
-
-                                <CalculateText
-                                    title={ "DMag" }
-                                    cal={ <span>(Dmg × Mul) × Mag</span> }
-                                    result={ <span>({ form.damage } × { form.multiplier }) × { form.magazine } = <b
-                                        className="text-red-600">{ dMag }</b></span> }
-                                />
-
-                                {/*<p>*/ }
-                                {/*    DPS (no reload&mag) = ({ form.damage } × { form.multiplier })*/ }
-                                {/*    × { rps } ={ " " }*/ }
-                                {/*    <b>{ normalDps }</b>*/ }
-                                {/*</p>*/ }
-
-                                {/*<p>*/ }
-                                {/*    DPS (no ammo) = ({ damage } × { multiplier }) × { rps } ={ " " }*/ }
-                                {/*    <b>{ normalDps }</b>*/ }
-                                {/*</p>*/ }
-                            </div>
-                        </CardHeader>
-
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
-                            {/* Normal Damage */ }
-                            <div>
-                                <h3 className="font-semibold">Normal Damage</h3>
-                                <p>Damage (Base) = ({ form.damage } × { form.multiplier }) = <b>{ normalDps }</b></p>
-                                <p>Total Damage per Mag = { normalDps } × { form.magazine } = { (dMag) }</p>
-                                <p>Effective DPS = { (dMag) } / { totalCycleTime } = { normalDpsEffective }</p>
-                            </div>
-
-                            {/* With Critical */ }
-                            <div>
-                                <h3 className="font-semibold">With Critical</h3>
-                                {/*<p>hit Damage = { criticalHit }</p>*/ }
-                                <p>Average Damage = { criticalAverage } </p>
-                                <p>Damage (Critical) = <b>{ criticalDps }</b></p>
-                                <p>Total Damage per Mag = { criticalTotalDamagePerMag }</p>
-                                <p>Effective DPS = { criticalDpsEffective }</p>
-                            </div>
-
-                            {/* Normal + Elemental */ }
-                            <div>
-                                <h3 className="font-semibold">Normal + Elemental</h3>
-                                <p>
-                                    Base Damage + Elemental = { normalDps } + { form.elementalDps } ={ " " }
-                                    <b>{ normalPlusElementDps }</b>
-                                </p>
-                                <p>
-                                    Total Damage per Mag = { normalPlusElementTotalDamagePerMag }
-                                </p>
-                                <p>
-                                    Effective DPS = { normalPlusElementDpsEffective }
-                                </p>
-                            </div>
-
-                            {/* Critical + Elemental */ }
-                            <div>
-                                <h3 className="font-semibold">Critical + Elemental</h3>
-                                <p>
-                                    Crit Damage + Elemental = { criticalDps } + { form.elementalDps } ={ " " }
-                                    <b>{ criticalPlusElementDps }</b>
-                                </p>
-                                <p>
-                                    Total Damage per Mag = { criticalPlusElementTotalDamagePerMag }
-                                </p>
-                                <p>
-                                    Effective DPS = { criticalPlusElementDpsEffective }
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+              <div className="flex flex-col gap-1">
+                <Label>Category</Label>
+                <div className=" flex items-center gap-1 border border-input rounded-lg pl-3">
+                  <Layers2 />
+                  <Select
+                    onValueChange={(v) => setField("category", v)}
+                    value={form.category}
+                  >
+                    <SelectTrigger className={"w-full ml-2 border-white"}>
+                      <SelectValue placeholder="Category:" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {setting.category.map((opt) => (
+                        <SelectItem
+                          key={opt.label}
+                          value={opt.label.toString()}
+                        >
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-            </motion.div>
-        </TooltipProvider>
-    );
+              </div>
+
+              <MyInput
+                icon={<Sword />}
+                title="Damage"
+                type="number"
+                value={form.damage}
+                onChange={(v) => setField("damage", v)}
+                placeholder="Damage: 25"
+              />
+
+              <MyInput
+                icon={<Swords />}
+                title="Multiplier"
+                type="number"
+                value={form.multiplier}
+                onChange={(v) => setField("multiplier", v)}
+                placeholder="Multiplier: 2"
+              />
+
+              <MyInput
+                icon={<Clock />}
+                title="Rate of Fire (RPM)"
+                type="number"
+                value={form.fireTime}
+                onChange={(v) => setField("fireTime", v)}
+                placeholder="RPM: 600"
+              />
+              <MyInput
+                icon={<Box />}
+                title="Magazine Size"
+                type="number"
+                value={form.magazine}
+                onChange={(v) => setField("magazine", v)}
+                placeholder="Magazine Size: 30"
+              />
+              <MyInput
+                icon={<RefreshCcw />}
+                title="Reload Time (s)"
+                type="number"
+                value={form.reloadTime}
+                onChange={(v) => setField("reloadTime", v)}
+                placeholder="Reload Time: 2.5"
+              />
+
+              <MyInput
+                icon={<Biohazard />}
+                title="Elemental DPS"
+                type="number"
+                value={form.elementalDps}
+                onChange={(v) => setField("elementalDps", v)}
+                placeholder="Elemental DPS: 50"
+              />
+              <MyInput
+                icon={<Bolt />}
+                title="Critical Chance (%)"
+                type="number"
+                value={form.criticalChange}
+                onChange={(v) => setField("criticalChange", v)}
+                placeholder="Critical Chance: 30"
+              />
+              <MyInput
+                icon={<Sparkle />}
+                title="Critical Multiplier"
+                type="number"
+                value={form.criticalMultiplier}
+                onChange={(v) => setField("criticalMultiplier", v)}
+                placeholder="Multiplier: 2"
+              />
+            </CardContent>
+            <CardFooter className="gap-2">
+              <Button onClick={saveWeapon}>
+                {" "}
+                <Plus /> Add
+              </Button>
+              <AlertButton
+                title={"Reset Weapon"}
+                desc="This will reset all weapon settings to default. Are you sure?"
+                onConfirm={reset}
+              >
+                <Button variant="destructive">
+                  <RotateCcw />
+                  Reset
+                </Button>
+              </AlertButton>
+            </CardFooter>
+          </Card>
+
+          <Card className={"text-sm sm:text-base"}>
+            <CardHeader>
+              <CardTitle className="font-bold text-2xl">Results</CardTitle>
+
+              <div className="grid grid-cols-2 gap-2">
+                <CalculateText
+                  title={"RPS"}
+                  cal={<span>Fire Rate / {time} </span>}
+                  result={
+                    <span>
+                      {form.fireTime} / {time} ={" "}
+                      <b className="text-blue-600">{rps}</b> bullets/sec
+                    </span>
+                  }
+                />
+                <CalculateText
+                  title={"Standard DPS"}
+                  cal={<span> (Damage × Mul) × RPS</span>}
+                  result={
+                    <span>
+                      ({form.damage} × {form.multiplier}) × {rps} ={" "}
+                      <b className="text-green-600">{standarDps}</b>
+                    </span>
+                  }
+                />
+
+                <CalculateText
+                  title={"Cycle Time"}
+                  cal={<span>Mag / RPS + Reload Time </span>}
+                  result={
+                    <span>
+                      {" "}
+                      {form.magazine} / {rps} + {form.reloadTime} ={" "}
+                      <b className="text-purple-600">{totalCycleTime}s</b>
+                    </span>
+                  }
+                />
+
+                <CalculateText
+                  title={"DMag"}
+                  cal={<span>(Dmg × Mul) × Mag</span>}
+                  result={
+                    <span>
+                      ({form.damage} × {form.multiplier}) × {form.magazine} ={" "}
+                      <b className="text-red-600">{dMag}</b>
+                    </span>
+                  }
+                />
+
+                {/*<p>*/}
+                {/*    DPS (no reload&mag) = ({ form.damage } × { form.multiplier })*/}
+                {/*    × { rps } ={ " " }*/}
+                {/*    <b>{ normalDps }</b>*/}
+                {/*</p>*/}
+
+                {/*<p>*/}
+                {/*    DPS (no ammo) = ({ damage } × { multiplier }) × { rps } ={ " " }*/}
+                {/*    <b>{ normalDps }</b>*/}
+                {/*</p>*/}
+              </div>
+            </CardHeader>
+
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
+              {/* Normal Damage */}
+              <div>
+                <h3 className="font-semibold">Normal Damage</h3>
+                <p>
+                  Damage (Base) = ({form.damage} × {form.multiplier}) ={" "}
+                  <b>{normalDps}</b>
+                </p>
+                <p>
+                  Total Damage per Mag = {normalDps} × {form.magazine} = {dMag}
+                </p>
+                <p>
+                  Effective DPS = {dMag} / {totalCycleTime} ={" "}
+                  {normalDpsEffective}
+                </p>
+              </div>
+
+              {/* With Critical */}
+              <div>
+                <h3 className="font-semibold">With Critical</h3>
+                {/*<p>hit Damage = { criticalHit }</p>*/}
+                <p>Average Damage = {criticalAverage} </p>
+                <p>
+                  Damage (Critical) = <b>{criticalDps}</b>
+                </p>
+                <p>Total Damage per Mag = {criticalTotalDamagePerMag}</p>
+                <p>Effective DPS = {criticalDpsEffective}</p>
+              </div>
+
+              {/* Normal + Elemental */}
+              <div>
+                <h3 className="font-semibold">Normal + Elemental</h3>
+                <p>
+                  Base Damage + Elemental = {normalDps} + {form.elementalDps} ={" "}
+                  <b>{normalPlusElementDps}</b>
+                </p>
+                <p>
+                  Total Damage per Mag = {normalPlusElementTotalDamagePerMag}
+                </p>
+                <p>Effective DPS = {normalPlusElementDpsEffective}</p>
+              </div>
+
+              {/* Critical + Elemental */}
+              <div>
+                <h3 className="font-semibold">Critical + Elemental</h3>
+                <p>
+                  Crit Damage + Elemental = {criticalDps} + {form.elementalDps}{" "}
+                  = <b>{criticalPlusElementDps}</b>
+                </p>
+                <p>
+                  Total Damage per Mag = {criticalPlusElementTotalDamagePerMag}
+                </p>
+                <p>Effective DPS = {criticalPlusElementDpsEffective}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </motion.div>
+    </TooltipProvider>
+  );
 }
 
-export function ListSavedWeaponDialog({ weapons, selectWeapon, removeWeapon, }: {
-    weapons: Weapon[];
-    selectWeapon: (weapon: Weapon) => void;
-    removeWeapon: (id: string) => void;
-}) {
+export function ListSavedWeaponDialog({
+  weapons,
+  selectWeapon,
+  removeWeapon,
+}: Readonly<{
+  weapons: Weapon[];
+  selectWeapon: (weapon: Weapon) => void;
+  removeWeapon: (id: string) => void;
+}>) {
+  const {
+    searchTerm,
+    categoryFilter,
+    shortNameSort,
+    minDps,
+    maxDps,
+    sortOrder,
+    setSearchTerm,
+    setCategoryFilter,
+    setShortNameSort,
+    setMinDps,
+    setMaxDps,
+    setSortOrder,
+    resetFilters,
+  } = useWeaponFilterStore();
 
-    const {
-        searchTerm,
-        categoryFilter,
-        shortNameSort,
-        minDps,
-        maxDps,
-        sortOrder,
-        setSearchTerm,
-        setCategoryFilter,
-        setShortNameSort,
-        setMinDps,
-        setMaxDps,
-        setSortOrder,
-        resetFilters,
-    } = useWeaponFilterStore();
-
-    const filteredWeapons = weapons
+  const filteredWeapons = weapons
     .filter((w) => {
-        const matchesName = w.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesName = w.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-        const matchesCategory = categoryFilter
-            ? w.category.toLowerCase() === categoryFilter.toLowerCase()
-            : true;
+      const matchesCategory = categoryFilter
+        ? w.category.toLowerCase() === categoryFilter.toLowerCase()
+        : true;
 
-        const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
-        const matchesMinDps = minDps ? dps >= Number(minDps) : true;
-        const matchesMaxDps = maxDps ? dps <= Number(maxDps) : true;
+      const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
+      const matchesMinDps = minDps ? dps >= Number(minDps) : true;
+      const matchesMaxDps = maxDps ? dps <= Number(maxDps) : true;
 
-        return matchesName && matchesCategory && matchesMinDps && matchesMaxDps;
+      return matchesName && matchesCategory && matchesMinDps && matchesMaxDps;
     })
     .sort((a, b) => {
-        // 🔹 DPS sort first if chosen
-        if (sortOrder) {
-            const dpsA = a.fireTime > 0 ? (a.damage * a.multiplier) / a.fireTime : 0;
-            const dpsB = b.fireTime > 0 ? (b.damage * b.multiplier) / b.fireTime : 0;
-            return sortOrder === "asc" ? dpsA - dpsB : dpsB - dpsA;
-        }
+      // 🔹 DPS sort first if chosen
+      if (sortOrder) {
+        const dpsA =
+          a.fireTime > 0 ? (a.damage * a.multiplier) / a.fireTime : 0;
+        const dpsB =
+          b.fireTime > 0 ? (b.damage * b.multiplier) / b.fireTime : 0;
+        return sortOrder === "asc" ? dpsA - dpsB : dpsB - dpsA;
+      }
 
-        // 🔹 Otherwise apply name sorting
-        return shortNameSort === "asc"
-            ? a.name.localeCompare(b.name)
-            : b.name.localeCompare(a.name);
+      // 🔹 Otherwise apply name sorting
+      return shortNameSort === "asc"
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
     });
 
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button>Open</Button>
-            </DialogTrigger>
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>Open</Button>
+      </DialogTrigger>
 
-            <DialogContent className="sm:max-w-5xl w-full px-3 sm:px-6">
-                <DialogHeader>
-                    <DialogTitle>Saved Weapons</DialogTitle>
-                    <div className="grid col-span-2 gap-2">
+      <DialogContent className="sm:max-w-5xl w-full px-3 sm:px-6">
+        <DialogHeader>
+          <DialogTitle>Saved Weapons</DialogTitle>
+          <div className="grid col-span-2 gap-2">
+            <input
+              type="text"
+              placeholder="Search by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border rounded p-2 flex-1"
+            />
+            <div className="flex gap-2">
+              {/* Short Name + Category */}
+              <div className="flex gap-2">
+                <select
+                  value={shortNameSort}
+                  onChange={(e) =>
+                    setShortNameSort(e.target.value as "asc" | "desc")
+                  }
+                  className="border rounded "
+                >
+                  <option value="asc">name A → Z</option>
+                  <option value="desc">name Z → A</option>
+                </select>
 
-                        <input
-                            type="text"
-                            placeholder="Search by name..."
-                            value={ searchTerm }
-                            onChange={ (e) => setSearchTerm(e.target.value) }
-                            className="border rounded p-2 flex-1"
-                        />
-                        <div className="flex gap-2">
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="border rounded p-2"
+                >
+                  <option value="">All Categories</option>
+                  {[...new Set(weapons.map((w) => w.category))].map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
-                            {/* Short Name + Category */ }
-                            <div className="flex gap-2">
-                                <select
-                                    value={ shortNameSort }
-                                    onChange={ (e) => setShortNameSort(e.target.value as "asc" | "desc") }
-                                    className="border rounded "
-                                >
-                                    <option value="asc">name A → Z</option>
-                                    <option value="desc">name Z → A</option>
-                                </select>
+            {/* DPS Range + DPS Sort */}
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="Min DPS"
+                value={minDps}
+                onChange={(e) => setMinDps(e.target.value)}
+                className="border rounded p-2 w-28"
+              />
+              <input
+                type="number"
+                placeholder="Max DPS"
+                value={maxDps}
+                onChange={(e) => setMaxDps(e.target.value)}
+                className="border rounded p-2 w-28"
+              />
 
-                                <select
-                                    value={ categoryFilter }
-                                    onChange={ (e) => setCategoryFilter(e.target.value) }
-                                    className="border rounded p-2"
-                                >
-                                    <option value="">All Categories</option>
-                                    { [ ...new Set(weapons.map((w) => w.category)) ].map((cat) => (
-                                        <option key={ cat } value={ cat }>
-                                            { cat }
-                                        </option>
-                                    )) }
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* DPS Range + DPS Sort */ }
-                        <div className="flex gap-2">
-                            <input
-                                type="number"
-                                placeholder="Min DPS"
-                                value={ minDps }
-                                onChange={ (e) => setMinDps(e.target.value) }
-                                className="border rounded p-2 w-28"
-                            />
-                            <input
-                                type="number"
-                                placeholder="Max DPS"
-                                value={ maxDps }
-                                onChange={ (e) => setMaxDps(e.target.value) }
-                                className="border rounded p-2 w-28"
-                            />
-
-                            <select
-                                value={ sortOrder }
-                                onChange={ (e) => setSortOrder(e.target.value as "asc" | "desc" | "") }
-                                className="border rounded p-2"
-                            >
-                                <option value="">DPS Sort</option>
-                                <option value="asc">Sort DPS ↑</option>
-                                <option value="desc">Sort DPS ↓</option>
-                            </select>
-                        </div>
-
-                        {/* 🔹 Reset Button */ }
-                        <Button
-                            variant="outline"
-                            onClick={ resetFilters }
-                        >
-                            Reset
-                        </Button>
-                    </div>
-                </DialogHeader>
-                <div className={ 'h-96 overflow-y-scroll' }>
-
-                    { weapons.length > 0 ? (
-                        <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            { filteredWeapons.map((w) => {
-                                // const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
-                                return (
-                                    <WeaponList weapon={ w } key={ w.id }
-                                                removeWeapon={ removeWeapon }
-                                                selectWeapon={ selectWeapon }/>
-                                );
-                            }) }
-                        </div>
-
-                    ) : (
-                        <p className="text-muted-foreground">No saved weapons.</p>
-                    ) }
-                </div>
-
-            </DialogContent>
-        </Dialog>
-
-    );
-}
-
-export function WeaponList({ weapon, removeWeapon, selectWeapon, isWeapon1, isDialog = true }: {
-    weapon: Weapon,
-    isWeapon1?: boolean,
-    isDialog?: boolean,
-    selectWeapon: (w: Weapon) => void,
-    removeWeapon: (w: Weapon['id']) => void
-}) {
-
-    const { normalDps } = useDpsWeaponBasic(weapon)
-
-    return (
-        <Card className={ 'gap-0 ' }>
-            <CardHeader className={ 'px-3 sm:px-6' }>
-
-                <CardTitle
-                    className={ 'capitalize' }>{ weapon.name } ({ weapon.category }) {
-                    normalDps
+              <select
+                value={sortOrder}
+                onChange={(e) =>
+                  setSortOrder(e.target.value as "asc" | "desc" | "")
                 }
+                className="border rounded p-2"
+              >
+                <option value="">DPS Sort</option>
+                <option value="asc">Sort DPS ↑</option>
+                <option value="desc">Sort DPS ↓</option>
+              </select>
+            </div>
 
-                </CardTitle>
-            </CardHeader>
-            <CardContent className={ 'px-3 sm:px-6' }>
-                <div className="grid grid-cols-4 gap-2  sm:text-sm text-xs ">
-                    <IconWeapon icon={ <Sword/> } text={ `${ weapon.damage } x ${ weapon.multiplier }` }/>
-                    <IconWeapon icon={ <Clock/> } text={ `${ weapon.fireTime } ft` }/>
-                    <IconWeapon icon={ <Box/> } text={ `${ weapon.magazine } mag` }/>
-                    <IconWeapon icon={ <RefreshCw/> } text={ `${ weapon.reloadTime } rel` }/>
-
-                    <div className="grid grid-cols-2  gap-2 col-span-4">
-                        { isDialog ?
-                            <DialogClose asChild>
-                                <Button
-                                    className={ 'w-full' }
-                                    size="sm" onClick={ () => selectWeapon(weapon) }>
-                                    <Pickaxe/>
-                                    <span> Weapon { isWeapon1 === undefined ? null : <>{ isWeapon1 ? '1' : '2' }</> }
-                                        {/*<span className={ 'hidden sm:block' }>Select</span>*/ }
-                                    </span>
-                                </Button>
-                            </DialogClose>
-                            : null }
-
-                        <AlertButton
-                            title="Delete Weapon?"
-                            desc="This action cannot be undone. It will permanently delete this weapon."
-                            onConfirm={ () => removeWeapon(weapon.id) }
-                        >
-                            <Button variant="destructive" size="sm" className="w-full">
-                                <TrashIcon />
-                                Delete
-                            </Button>
-                        </AlertButton>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-export function AlertButton({ title, desc, children, onConfirm }: {
-    title: string
-    desc: string
-    children: ReactNode
-    onConfirm: () => void
-}) {
-    return (
-        <AlertDialog>
-            <AlertDialogTrigger asChild>{ children }</AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>{ title }</AlertDialogTitle>
-                    <AlertDialogDescription>{ desc }</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={ onConfirm }>Confirm</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-    )
-}
-
-function CalculateText({ title, cal, result, }: { title: string, cal: ReactNode, result: ReactNode }) {
-    return (<div>
-            <span className="font-medium">{ title }:</span>
-            <ul className={ 'list-disc list-inside' }>
-                <li>{ cal }</li>
-                <li>{ result }</li>
-            </ul>
+            {/* 🔹 Reset Button */}
+            <Button variant="outline" onClick={resetFilters}>
+              Reset
+            </Button>
+          </div>
+        </DialogHeader>
+        <div className={"h-96 overflow-y-scroll"}>
+          {weapons.length > 0 ? (
+            <div className=" grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {filteredWeapons.map((w) => {
+                // const dps = w.fireTime > 0 ? (w.damage * w.multiplier) / w.fireTime : 0;
+                return (
+                  <WeaponList
+                    weapon={w}
+                    key={w.id}
+                    removeWeapon={removeWeapon}
+                    selectWeapon={selectWeapon}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-muted-foreground">No saved weapons.</p>
+          )}
         </div>
-    );
+      </DialogContent>
+    </Dialog>
+  );
 }
 
+export function WeaponList({
+  weapon,
+  removeWeapon,
+  selectWeapon,
+  isWeapon1,
+  isDialog = true,
+}: Readonly<{
+  weapon: Weapon;
+  isWeapon1?: boolean;
+  isDialog?: boolean;
+  selectWeapon: (w: Weapon) => void;
+  removeWeapon: (w: Weapon["id"]) => void;
+}>) {
+  const { normalDps } = useDpsWeaponBasic(weapon);
+
+  return (
+    <Card className={"gap-0 "}>
+      <CardHeader className={"px-3 sm:px-6"}>
+        <CardTitle className={"capitalize"}>
+          {weapon.name} ({weapon.category}) {normalDps}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className={"px-3 sm:px-6"}>
+        <div className="grid grid-cols-4 gap-2  sm:text-sm text-xs ">
+          <IconWeapon
+            icon={<Sword />}
+            text={`${weapon.damage} x ${weapon.multiplier}`}
+          />
+          <IconWeapon icon={<Clock />} text={`${weapon.fireTime} ft`} />
+          <IconWeapon icon={<Box />} text={`${weapon.magazine} mag`} />
+          <IconWeapon icon={<RefreshCw />} text={`${weapon.reloadTime} rel`} />
+
+          <div className="grid grid-cols-2  gap-2 col-span-4">
+            {isDialog ? (
+              <DialogClose asChild>
+                <Button
+                  className={"w-full"}
+                  size="sm"
+                  onClick={() => selectWeapon(weapon)}
+                >
+                  <Pickaxe />
+                  <span>
+                    {" "}
+                    Weapon{" "}
+                    {isWeapon1 === undefined ? null : (
+                      <>{isWeapon1 ? "1" : "2"}</>
+                    )}
+                    {/*<span className={ 'hidden sm:block' }>Select</span>*/}
+                  </span>
+                </Button>
+              </DialogClose>
+            ) : null}
+
+            <AlertButton
+              title="Delete Weapon?"
+              desc="This action cannot be undone. It will permanently delete this weapon."
+              onConfirm={() => removeWeapon(weapon.id)}
+            >
+              <Button variant="destructive" size="sm" className="w-full">
+                <TrashIcon />
+                Delete
+              </Button>
+            </AlertButton>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
